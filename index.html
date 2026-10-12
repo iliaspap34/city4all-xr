@@ -1,10 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>City4All XR | Accessible World</title>
+
+  <!-- MapillaryJS stylesheet (street-level imagery viewer, MIT licensed) -->
+  <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css" />
 
   <style>
     * { box-sizing: border-box; }
@@ -124,6 +126,27 @@
       line-height: 1.5;
     }
 
+    #message.ok { color: #38d9a9; }
+
+    #imageInfo {
+      margin-top: 8px;
+      color: #b6c4d7;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    #credit {
+      margin-top: 8px;
+      color: #8fa0b8;
+      font-size: 11px;
+    }
+    #credit a { color: #38d9a9; }
+
+    .place:focus-visible, #search:focus-visible, #credit a:focus-visible {
+      outline: 3px solid #38d9a9;
+      outline-offset: 2px;
+    }
+
     @media (max-width: 760px) {
       header { padding: 0 14px; }
       main {
@@ -145,15 +168,15 @@
 <body>
   <header>
     <div class="brand">City4All <span>XR</span></div>
-    <div class="status" id="status">Σύνδεση με Street View…</div>
+    <div class="status" id="status" role="status" aria-live="polite">Φόρτωση Mapillary…</div>
   </header>
 
   <main>
     <aside>
       <h2>Προσβάσιμα σημεία</h2>
       <div class="muted">
-        Επίλεξε ένα σημείο για να αναζητήσεις κοντινό Street View
-        και να δεις τα διαθέσιμα στοιχεία του.
+        Επίλεξε ένα σημείο για να αναζητήσεις κοντινή φωτογραφία δρόμου
+        (Mapillary) και να δεις τα διαθέσιμα στοιχεία του.
       </div>
 
       <input id="search" type="search"
@@ -165,7 +188,7 @@
     </aside>
 
     <section class="workspace">
-      <div id="pano" aria-label="Street View"></div>
+      <div id="pano" aria-label="Πανοραμική εικόνα δρόμου"></div>
 
       <section id="details">
         <h2 id="detailTitle">Καλώς ήρθες στο City4All XR</h2>
@@ -173,19 +196,31 @@
           Επίλεξε ένα σημείο από τη λίστα για να εμφανιστούν οι πληροφορίες του.
         </div>
         <div id="attributes"></div>
-        <div id="message">
-          Το Street View είναι διαθέσιμο μόνο σε περιοχές που καλύπτονται από την Google.
+        <div id="message" role="status" aria-live="polite">
+          Η εικόνα δρόμου προέρχεται από το Mapillary και υπάρχει μόνο όπου έχουν
+          ανεβάσει φωτογραφίες εθελοντές.
+        </div>
+        <div id="imageInfo"></div>
+        <div id="credit">
+          Εικόνες δρόμου: <a href="https://www.mapillary.com" target="_blank" rel="noopener">© Mapillary</a>,
+          συνεισφέροντες χρήστες, CC BY-SA 4.0.
         </div>
       </section>
     </section>
   </main>
 
+  <script src="config.js"></script>
+  <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
+
   <script>
     const ARCGIS_URL =
       "https://services4.arcgis.com/D1oWZQPmnyTvHNmk/arcgis/rest/services/survey123_d2ca09a7753a4dca8a8a5e3c84c8e862/FeatureServer/0/query";
 
-    let panorama;
-    let streetViewService;
+    const GRAPH_URL = "https://graph.mapillary.com/images";
+    const IMAGE_FIELDS = "id,geometry,captured_at,compass_angle,is_pano";
+
+    let viewer = null;
+    let currentSearch = 0;   // guards against out-of-order responses
     let allPlaces = [];
     let selectedId = null;
 
@@ -220,33 +255,111 @@
       ]) || "Δεν υπάρχει διαθέσιμη περιγραφή στα δεδομένα.";
     }
 
-    function initMap() {
-      panorama = new google.maps.StreetViewPanorama(
-        document.getElementById("pano"),
-        {
-          position: { lat: 37.929, lng: 23.750 },
-          pov: { heading: 0, pitch: 0 },
-          zoom: 1,
-          addressControl: true,
-          fullscreenControl: true,
-          linksControl: true,
-          panControl: true,
-          zoomControl: true,
-          motionTracking: false,
-          motionTrackingControl: false
+    function setMessage(text, ok = false) {
+      const el = document.getElementById("message");
+      el.textContent = text;
+      el.className = ok ? "ok" : "";
+    }
+
+    // Distance in metres between two lat/lng points (haversine).
+    function distanceMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371000, rad = Math.PI / 180;
+      const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+      const h = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    function initViewer() {
+      const token = (typeof MAPILLARY_TOKEN === "string") ? MAPILLARY_TOKEN.trim() : "";
+
+      if (typeof mapillary === "undefined") {
+        setStatus("Αποτυχία φόρτωσης Mapillary");
+        setMessage("Δεν φορτώθηκε η βιβλιοθήκη MapillaryJS. Έλεγξε τη σύνδεση στο διαδίκτυο.");
+      } else if (!token) {
+        setStatus("Λείπει το Mapillary token");
+        setMessage("Δεν έχει οριστεί Mapillary token. Άνοιξε το config.js και βάλε το client token σου. Τα σημεία City4All εμφανίζονται κανονικά.");
+      } else if (typeof mapillary.isSupported === "function" && !mapillary.isSupported()) {
+        setStatus("Ο browser δεν υποστηρίζει WebGL");
+        setMessage("Ο browser ή η συσκευή δεν υποστηρίζει WebGL, που απαιτείται για την πανοραμική εικόνα.");
+      } else {
+        try {
+          viewer = new mapillary.Viewer({
+            accessToken: token,
+            container: "pano"
+          });
+
+          // Show where the viewer currently is (updates when the user navigates).
+          viewer.on("image", event => {
+            const img = event.image;
+            if (img && img.lngLat) showImageInfo(img.id, img.lngLat.lat, img.lngLat.lng, img.capturedAt);
+          });
+
+          window.addEventListener("resize", () => viewer && viewer.resize());
+          setStatus("Mapillary έτοιμο");
+        } catch (error) {
+          console.error(error);
+          setStatus("Σφάλμα Mapillary");
+          setMessage("Η εκκίνηση του Mapillary απέτυχε. Έλεγξε ότι το token είναι σωστό.");
         }
-      );
+      }
 
-      streetViewService = new google.maps.StreetViewService();
+      loadPlaces();   // ArcGIS data loads regardless of imagery availability
+    }
 
-      panorama.addListener("status_changed", () => {
-        if (panorama.getStatus() === google.maps.StreetViewStatus.ZERO_RESULTS) {
-          document.getElementById("message").textContent =
-            "Δεν βρέθηκε Street View σε αυτή τη θέση. Δοκίμασε άλλο σημείο.";
+    // Finds the nearest Mapillary image to a point. Radius search is limited
+    // to 50 m by the API, so fall back to a small bounding box (< 0.01° wide).
+    async function findNearestImage(lat, lng) {
+      const token = MAPILLARY_TOKEN.trim();
+
+      async function query(extra) {
+        const params = new URLSearchParams({ fields: IMAGE_FIELDS, access_token: token, ...extra });
+        const response = await fetch(`${GRAPH_URL}?${params}`);
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("TOKEN_REJECTED");
         }
-      });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        if (json.error) throw new Error(json.error.message || "Mapillary API error");
+        return json.data || [];
+      }
 
-      loadPlaces();
+      let images = await query({ lat, lng, radius: 50, limit: 100 });
+
+      if (images.length === 0) {
+        const dLat = 0.0015, dLng = 0.0019;   // ≈ 165 m × 165 m half-box at this latitude
+        const bbox = [lng - dLng, lat - dLat, lng + dLng, lat + dLat].join(",");
+        images = await query({ bbox, limit: 100 });
+      }
+
+      let best = null;
+      for (const img of images) {
+        const coords = img.geometry && img.geometry.coordinates;
+        if (!coords) continue;
+        const d = distanceMeters(lat, lng, coords[1], coords[0]);
+        // Prefer true panoramas when two images are about equally close.
+        const score = d - (img.is_pano ? 5 : 0);
+        if (!best || score < best.score) best = { img, d, score };
+      }
+      return best;
+    }
+
+    function showImageInfo(imageId, lat, lng, capturedAt) {
+      const place = allPlaces.find(f => String(placeId(f)) === String(selectedId));
+      let text = `Θέση φωτογραφίας: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      if (capturedAt) text += ` · Λήψη: ${new Date(capturedAt).toLocaleDateString("el-GR")}`;
+      if (place) {
+        const d = Math.round(distanceMeters(
+          Number(place.geometry.y), Number(place.geometry.x), lat, lng));
+        text += ` · Απόσταση από το σημείο City4All: ~${d} μ.`;
+      }
+      document.getElementById("imageInfo").textContent = text;
+    }
+
+    function placeId(feature) {
+      return feature.attributes?.OBJECTID ??
+             feature.attributes?.FID ??
+             `${feature.geometry.x},${feature.geometry.y}`;
     }
 
     async function loadPlaces() {
@@ -340,31 +453,49 @@
         attributes.appendChild(item);
       });
 
-      const latLng = {
-        lat: Number(feature.geometry.y),
-        lng: Number(feature.geometry.x)
-      };
+      openImageryNear(Number(feature.geometry.y), Number(feature.geometry.x));
+    }
 
-      document.getElementById("message").textContent =
-        "Αναζήτηση κοντινού Street View…";
+    async function openImageryNear(lat, lng) {
+      document.getElementById("imageInfo").textContent = "";
 
-      streetViewService.getPanorama({
-        location: latLng,
-        radius: 150,
-        preference: google.maps.StreetViewPreference.NEAREST
-      }, (data, status) => {
-        if (status === google.maps.StreetViewStatus.OK && data.location) {
-          panorama.setPano(data.location.pano);
-          panorama.setPov({ heading: 0, pitch: 0 });
-          panorama.setVisible(true);
+      if (!viewer) {
+        // Viewer unavailable (no token / no WebGL / library failed): message already shown.
+        return;
+      }
 
-          document.getElementById("message").textContent =
-            "Βρέθηκε κοντινό Street View. Χρησιμοποίησε τα βέλη στην εικόνα για να κινηθείς στον δρόμο.";
-        } else {
-          document.getElementById("message").textContent =
-            "Δεν βρέθηκε Street View σε ακτίνα 150 μέτρων από το σημείο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες.";
+      const searchId = ++currentSearch;
+      setMessage("Αναζήτηση κοντινής φωτογραφίας δρόμου…");
+
+      try {
+        const best = await findNearestImage(lat, lng);
+        if (searchId !== currentSearch) return;   // user already picked another point
+
+        if (!best) {
+          setMessage("Δεν βρέθηκε φωτογραφία δρόμου του Mapillary σε περίπου 150 μέτρα από το σημείο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες. Δοκίμασε άλλο σημείο.");
+          return;
         }
-      });
+
+        await viewer.moveTo(best.img.id);
+        if (searchId !== currentSearch) return;
+
+        setMessage(
+          `Βρέθηκε φωτογραφία σε απόσταση ~${Math.round(best.d)} μ. από το σημείο. ` +
+          "Η θέση της φωτογραφίας δεν ταυτίζεται με τη θέση του σημείου. " +
+          "Σύρε για να κοιτάξεις γύρω και κάνε κλικ σε γειτονικές θέσεις για να κινηθείς.",
+          true
+        );
+        showImageInfo(best.img.id, best.img.geometry.coordinates[1],
+                      best.img.geometry.coordinates[0], best.img.captured_at);
+      } catch (error) {
+        if (searchId !== currentSearch) return;
+        console.error(error);
+        if (error.message === "TOKEN_REJECTED") {
+          setMessage("Το Mapillary απέρριψε το token (401/403). Έλεγξε ότι το client token στο config.js είναι σωστό και ενεργό.");
+        } else {
+          setMessage("Αποτυχία επικοινωνίας με το Mapillary. Δοκίμασε ξανά σε λίγο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες.");
+        }
+      }
     }
 
     document.getElementById("search").addEventListener("input", event => {
@@ -376,8 +507,9 @@
     });
   </script>
 
-  <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7dMOo-XGOHXBNqbw6KcjxA84pNyVmQA&callback=initMap">
+  <script>
+    // Start once the page and the (deferred) Mapillary script are ready.
+    window.addEventListener("load", initViewer);
   </script>
 </body>
 </html>
