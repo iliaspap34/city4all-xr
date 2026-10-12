@@ -53,6 +53,9 @@
         if (data.error) throw new Error(data.error.message);
 
         const features = data.features || [];
+        console.log("City4All data:", data);
+        console.log("Number of points:", features.length);
+        console.log("First point:", features[0]);
 
         features.forEach((feature) => {
           const point = feature.geometry;
