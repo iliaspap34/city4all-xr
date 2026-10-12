@@ -2,96 +2,382 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City4All XR</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City4All XR | Accessible World</title>
+
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #101827;
+      background: #0b1220;
+      color: #f8fafc;
+    }
+
+    header {
+      height: 68px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: #111c30;
+      border-bottom: 1px solid #29364b;
+    }
+
+    .brand { font-size: 20px; font-weight: 800; }
+    .brand span { color: #38d9a9; }
+    .status { font-size: 12px; color: #aab8cc; }
+
+    main {
+      display: grid;
+      grid-template-columns: 310px minmax(0, 1fr);
+      height: calc(100vh - 68px);
+      min-height: 500px;
+    }
+
+    aside {
+      overflow-y: auto;
+      padding: 18px;
+      background: #111c30;
+      border-right: 1px solid #29364b;
+    }
+
+    h2 { font-size: 17px; margin: 0 0 8px; }
+    .muted { color: #aab8cc; font-size: 13px; line-height: 1.5; }
+
+    #search {
+      width: 100%;
+      padding: 11px;
+      margin: 16px 0 12px;
+      border-radius: 9px;
+      border: 1px solid #35445c;
+      background: #0b1220;
       color: white;
     }
-    header { padding: 16px 22px; }
-    h1 { color: #54e0b5; margin: 0 0 8px; }
-    #status { color: #cbd5e1; }
-    #map { width: 100%; height: 75vh; min-height: 400px; }
+
+    #places { display: grid; gap: 9px; }
+
+    .place {
+      width: 100%;
+      text-align: left;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #35445c;
+      background: #18253a;
+      color: white;
+      cursor: pointer;
+    }
+
+    .place:hover, .place.active {
+      border-color: #38d9a9;
+      background: #20364a;
+    }
+
+    .place strong { display: block; margin-bottom: 5px; }
+    .place small { color: #b6c4d7; line-height: 1.5; }
+
+    .workspace {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(250px, 1fr) auto;
+    }
+
+    #pano {
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+      background: #18253a;
+    }
+
+    #details {
+      padding: 17px 22px;
+      max-height: 230px;
+      overflow-y: auto;
+      background: #111c30;
+      border-top: 1px solid #29364b;
+    }
+
+    #details h2 { color: #38d9a9; }
+    #attributes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .attribute {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #1c2b41;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    #message {
+      margin-top: 12px;
+      color: #fbbf24;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      header { padding: 0 14px; }
+      main {
+        height: auto;
+        min-height: calc(100vh - 68px);
+        grid-template-columns: 1fr;
+      }
+      aside {
+        max-height: 260px;
+        border-right: none;
+        border-bottom: 1px solid #29364b;
+      }
+      .workspace { min-height: 65vh; }
+      #details { max-height: 250px; }
+    }
   </style>
 </head>
+
 <body>
   <header>
-    <h1>City4All XR</h1>
-    <p>Discover a more accessible world.</p>
-    <p id="status">Loading accessible locations...</p>
+    <div class="brand">City4All <span>XR</span></div>
+    <div class="status" id="status">Σύνδεση με Street View…</div>
   </header>
 
-  <div id="map"></div>
+  <main>
+    <aside>
+      <h2>Προσβάσιμα σημεία</h2>
+      <div class="muted">
+        Επίλεξε ένα σημείο για να αναζητήσεις κοντινό Street View
+        και να δεις τα διαθέσιμα στοιχεία του.
+      </div>
+
+      <input id="search" type="search"
+             placeholder="Αναζήτηση σημείου…" />
+
+      <div id="places">
+        <p class="muted">Φόρτωση σημείων από το ArcGIS…</p>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <div id="pano" aria-label="Street View"></div>
+
+      <section id="details">
+        <h2 id="detailTitle">Καλώς ήρθες στο City4All XR</h2>
+        <div class="muted" id="detailText">
+          Επίλεξε ένα σημείο από τη λίστα για να εμφανιστούν οι πληροφορίες του.
+        </div>
+        <div id="attributes"></div>
+        <div id="message">
+          Το Street View είναι διαθέσιμο μόνο σε περιοχές που καλύπτονται από την Google.
+        </div>
+      </section>
+    </section>
+  </main>
 
   <script>
-    let map;
+    const ARCGIS_URL =
+      "https://services4.arcgis.com/D1oWZQPmnyTvHNmk/arcgis/rest/services/survey123_d2ca09a7753a4dca8a8a5e3c84c8e862/FeatureServer/0/query";
 
-    async function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 37.929, lng: 23.750 },
-        zoom: 12,
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true
+    let panorama;
+    let streetViewService;
+    let allPlaces = [];
+    let selectedId = null;
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    function valueFor(attributes, candidates) {
+      const keys = Object.keys(attributes || {});
+      for (const candidate of candidates) {
+        const key = keys.find(k => k.toLowerCase() === candidate.toLowerCase());
+        if (key && attributes[key] !== null && attributes[key] !== "") {
+          return String(attributes[key]);
+        }
+      }
+      return "";
+    }
+
+    function placeName(feature, index) {
+      const a = feature.attributes || {};
+      return valueFor(a, [
+        "name", "title", "place_name", "business_name",
+        "location_name", "όνομα", "ονομασία"
+      ]) || `Σημείο City4All ${index + 1}`;
+    }
+
+    function placeDescription(feature) {
+      const a = feature.attributes || {};
+      return valueFor(a, [
+        "description", "comments", "notes", "details",
+        "accessibility", "περιγραφή", "σχόλια"
+      ]) || "Δεν υπάρχει διαθέσιμη περιγραφή στα δεδομένα.";
+    }
+
+    function initMap() {
+      panorama = new google.maps.StreetViewPanorama(
+        document.getElementById("pano"),
+        {
+          position: { lat: 37.929, lng: 23.750 },
+          pov: { heading: 0, pitch: 0 },
+          zoom: 1,
+          addressControl: true,
+          fullscreenControl: true,
+          linksControl: true,
+          panControl: true,
+          zoomControl: true,
+          motionTracking: false,
+          motionTrackingControl: false
+        }
+      );
+
+      streetViewService = new google.maps.StreetViewService();
+
+      panorama.addListener("status_changed", () => {
+        if (panorama.getStatus() === google.maps.StreetViewStatus.ZERO_RESULTS) {
+          document.getElementById("message").textContent =
+            "Δεν βρέθηκε Street View σε αυτή τη θέση. Δοκίμασε άλλο σημείο.";
+        }
       });
 
-      const status = document.getElementById("status");
-      const queryUrl =
-        "https://services4.arcgis.com/D1oWZQPmnyTvHNmk/arcgis/rest/services/survey123_d2ca09a7753a4dca8a8a5e3c84c8e862/FeatureServer/0/query" +
-        "?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json";
+      loadPlaces();
+    }
+
+    async function loadPlaces() {
+      const params = new URLSearchParams({
+        where: "1=1",
+        outFields: "*",
+        returnGeometry: "true",
+        outSR: "4326",
+        resultRecordCount: "2000",
+        f: "json"
+      });
 
       try {
-        const response = await fetch(queryUrl);
+        const response = await fetch(`${ARCGIS_URL}?${params}`);
         if (!response.ok) throw new Error("ArcGIS request failed");
 
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
+        if (data.error) throw new Error(data.error.message || "ArcGIS error");
 
-        const features = data.features || [];
-        console.log("City4All data:", data);
-        console.log("Number of points:", features.length);
-        console.log("First point:", features[0]);
+        allPlaces = (data.features || []).filter(f =>
+          f.geometry &&
+          Number.isFinite(Number(f.geometry.x)) &&
+          Number.isFinite(Number(f.geometry.y))
+        );
 
-        features.forEach((feature) => {
-          const point = feature.geometry;
-          if (!point) return;
+        renderPlaces(allPlaces);
+        setStatus(`${allPlaces.length} σημεία φορτώθηκαν`);
 
-          const lat = point.y;
-          const lng = point.x;
-          if (typeof lat !== "number" || typeof lng !== "number") return;
-
-          const marker = new google.maps.Marker({
-            position: { lat, lng },
-            map,
-            title: "City4All accessible location"
-          });
-
-          const info = new google.maps.InfoWindow({
-            content: "<div><strong>City4All</strong><br>Accessible location</div>"
-          });
-
-          marker.addListener("click", () => info.open({ map, anchor: marker }));
-        });
-
-        status.textContent =
-          "Loaded " + features.length + " locations from City4All.";
+        if (allPlaces.length === 0) {
+          document.getElementById("places").innerHTML =
+            '<p class="muted">Δεν βρέθηκαν σημεία με συντεταγμένες.</p>';
+        }
       } catch (error) {
         console.error(error);
-        status.textContent =
-          "Could not load locations. Check ArcGIS access and browser console.";
+        setStatus("Αποτυχία φόρτωσης");
+        document.getElementById("places").innerHTML =
+          '<p class="muted">Δεν φορτώθηκαν τα σημεία. Έλεγξε τη σύνδεση και τα δικαιώματα πρόσβασης του ArcGIS layer.</p>';
       }
     }
 
-    window.initMap = initMap;
+    function renderPlaces(places) {
+      const container = document.getElementById("places");
+      container.innerHTML = "";
+
+      places.forEach(feature => {
+        const id = feature.attributes?.OBJECTID ??
+                   feature.attributes?.FID ??
+                   `${feature.geometry.x},${feature.geometry.y}`;
+
+        const button = document.createElement("button");
+        button.className = "place" + (String(id) === String(selectedId) ? " active" : "");
+        button.innerHTML = "";
+
+        const title = document.createElement("strong");
+        title.textContent = placeName(feature, allPlaces.indexOf(feature));
+
+        const subtitle = document.createElement("small");
+        subtitle.textContent = placeDescription(feature);
+
+        button.append(title, subtitle);
+        button.addEventListener("click", () => selectPlace(feature, id));
+        container.appendChild(button);
+      });
+    }
+
+    function selectPlace(feature, id) {
+      selectedId = id;
+      renderPlaces(
+        allPlaces.filter(f => {
+          const search = document.getElementById("search").value.trim().toLowerCase();
+          return !search ||
+            placeName(f, allPlaces.indexOf(f)).toLowerCase().includes(search) ||
+            placeDescription(f).toLowerCase().includes(search);
+        })
+      );
+
+      const a = feature.attributes || {};
+      document.getElementById("detailTitle").textContent =
+        placeName(feature, allPlaces.indexOf(feature));
+      document.getElementById("detailText").textContent =
+        placeDescription(feature);
+
+      const attributes = document.getElementById("attributes");
+      attributes.innerHTML = "";
+
+      Object.entries(a).forEach(([key, value]) => {
+        if (value === null || value === "" || key.toLowerCase().includes("shape")) return;
+        const item = document.createElement("div");
+        item.className = "attribute";
+        item.textContent = `${key}: ${String(value)}`;
+        attributes.appendChild(item);
+      });
+
+      const latLng = {
+        lat: Number(feature.geometry.y),
+        lng: Number(feature.geometry.x)
+      };
+
+      document.getElementById("message").textContent =
+        "Αναζήτηση κοντινού Street View…";
+
+      streetViewService.getPanorama({
+        location: latLng,
+        radius: 150,
+        preference: google.maps.StreetViewPreference.NEAREST
+      }, (data, status) => {
+        if (status === google.maps.StreetViewStatus.OK && data.location) {
+          panorama.setPano(data.location.pano);
+          panorama.setPov({ heading: 0, pitch: 0 });
+          panorama.setVisible(true);
+
+          document.getElementById("message").textContent =
+            "Βρέθηκε κοντινό Street View. Χρησιμοποίησε τα βέλη στην εικόνα για να κινηθείς στον δρόμο.";
+        } else {
+          document.getElementById("message").textContent =
+            "Δεν βρέθηκε Street View σε ακτίνα 150 μέτρων από το σημείο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες.";
+        }
+      });
+    }
+
+    document.getElementById("search").addEventListener("input", event => {
+      const query = event.target.value.trim().toLowerCase();
+      renderPlaces(allPlaces.filter(f =>
+        placeName(f, allPlaces.indexOf(f)).toLowerCase().includes(query) ||
+        placeDescription(f).toLowerCase().includes(query)
+      ));
+    });
   </script>
 
   <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7dMOo-XGOHXBNqbw6KcjxA84pNyVmQA&callback=initMap&loading=async">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7dMOo-XGOHXBNqbw6KcjxA84pNyVmQA&callback=initMap">
   </script>
 </body>
 </html>
