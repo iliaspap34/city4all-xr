@@ -3,209 +3,480 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a1628" />
   <title>City4All XR | Accessible World</title>
+
+  <!-- Atkinson Hyperlegible: typeface designed for low-vision readers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 
   <!-- MapillaryJS stylesheet (street-level imagery viewer, MIT licensed) -->
   <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css" />
 
   <style>
+    :root {
+      --bg: #0a1628;
+      --panel: #0f1f38;
+      --raised: #152a48;
+      --line: #243b5e;
+      --text: #eef3fa;
+      --muted: #a3b5cf;
+      --accent: #35e0c2;
+      --accent-ink: #04231e;
+      --warn: #f5c451;
+      --radius: 12px;
+      --header-h: 60px;
+    }
+
     * { box-sizing: border-box; }
+
+    html { color-scheme: dark; }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: #f8fafc;
+      font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
     }
 
+    button, input { font: inherit; color: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 12px;
+      top: -60px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-radius: 8px;
+      font-weight: 700;
+      z-index: 100;
+    }
+    .skip-link:focus { top: 10px; }
+
+    /* ---------- Header ---------- */
     header {
-      height: 68px;
-      padding: 0 22px;
+      height: var(--header-h);
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      background: #111c30;
-      border-bottom: 1px solid #29364b;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
     }
 
-    .brand { font-size: 20px; font-weight: 800; }
-    .brand span { color: #38d9a9; }
-    .status { font-size: 12px; color: #aab8cc; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.1px;
+    }
+    .brand svg { flex: none; }
+    .brand .xr { color: var(--accent); }
 
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex: none;
+    }
+    .status.ready::before { background: var(--accent); }
+    .status.problem::before { background: var(--warn); }
+
+    /* ---------- Layout ---------- */
     main {
       display: grid;
-      grid-template-columns: 310px minmax(0, 1fr);
-      height: calc(100vh - 68px);
-      min-height: 500px;
+      grid-template-columns: 350px minmax(0, 1fr);
+      grid-template-areas: "list stage";
+      height: calc(100vh - var(--header-h));
+      height: calc(100dvh - var(--header-h));
+      min-height: 520px;
     }
 
-    aside {
-      overflow-y: auto;
-      padding: 18px;
-      background: #111c30;
-      border-right: 1px solid #29364b;
+    .list-panel {
+      grid-area: list;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
     }
 
-    h2 { font-size: 17px; margin: 0 0 8px; }
-    .muted { color: #aab8cc; font-size: 13px; line-height: 1.5; }
+    .list-head { padding: 20px 18px 12px; }
+
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 18px; }
+    .lead { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+
+    .search-wrap { position: relative; margin-top: 14px; }
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
 
     #search {
       width: 100%;
-      padding: 11px;
-      margin: 16px 0 12px;
-      border-radius: 9px;
-      border: 1px solid #35445c;
-      background: #0b1220;
-      color: white;
+      padding: 12px 12px 12px 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+    }
+    #search::placeholder { color: #8195b1; }
+    #search:hover { border-color: #3a5a88; }
+
+    .count {
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: var(--muted);
     }
 
-    #places { display: grid; gap: 9px; }
+    #places {
+      list-style: none;
+      margin: 0;
+      padding: 4px 12px 16px;
+      overflow-y: auto;
+      flex: 1;
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
 
     .place {
       width: 100%;
+      display: block;
       text-align: left;
-      padding: 12px;
+      padding: 11px 12px 11px 14px;
       border-radius: 10px;
-      border: 1px solid #35445c;
-      background: #18253a;
-      color: white;
+      border: 1px solid transparent;
+      border-left: 4px solid transparent;
+      background: transparent;
       cursor: pointer;
     }
-
-    .place:hover, .place.active {
-      border-color: #38d9a9;
-      background: #20364a;
+    .place:hover { background: var(--raised); }
+    .place[aria-current="true"] {
+      background: var(--raised);
+      border-color: var(--line);
+      border-left-color: var(--accent);
+    }
+    .place .p-name { display: block; font-weight: 700; overflow-wrap: anywhere; }
+    .place .p-sub {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 2px;
+      font-size: 13px;
+      color: var(--muted);
     }
 
-    .place strong { display: block; margin-bottom: 5px; }
-    .place small { color: #b6c4d7; line-height: 1.5; }
+    .list-note {
+      padding: 14px 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-    .workspace {
+    /* ---------- Stage (street imagery) ---------- */
+    .stage {
+      grid-area: stage;
+      position: relative;
+      display: grid;
       min-width: 0;
       min-height: 0;
-      display: grid;
-      grid-template-rows: minmax(250px, 1fr) auto;
+      background: #060e1b;
+      overflow: hidden;
     }
 
     #pano {
+      grid-area: 1 / 1;
       width: 100%;
       height: 100%;
-      min-height: 250px;
-      background: #18253a;
+      min-height: 280px;
     }
 
-    #details {
-      padding: 17px 22px;
-      max-height: 230px;
-      overflow-y: auto;
-      background: #111c30;
-      border-top: 1px solid #29364b;
+    .stage-empty {
+      grid-area: 1 / 1;
+      z-index: 2;
+      place-self: center;
+      max-width: 340px;
+      padding: 24px;
+      text-align: center;
+      pointer-events: none;
     }
+    .stage-empty h2 { font-size: 20px; }
+    .stage-empty p { margin: 8px 0 0; color: var(--muted); }
+    .stage-empty[hidden] { display: none; }
+    .stage-empty.warn h2 { color: var(--warn); }
 
-    #details h2 { color: #38d9a9; }
-    #attributes {
+    .loading-chip {
+      grid-area: 1 / 1;
+      z-index: 6;
+      place-self: start center;
+      margin-top: 16px;
+      padding: 8px 14px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      background: rgba(10, 22, 40, 0.92);
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .loading-chip[hidden] { display: none; }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Info card ---------- */
+    .card {
+      grid-area: 1 / 1;
+      z-index: 5;
+      align-self: end;
+      justify-self: start;
+      width: min(440px, calc(100% - 32px));
+      max-height: calc(100% - 32px);
+      margin: 16px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(15, 31, 56, 0.96);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
     }
 
-    .attribute {
-      padding: 8px 10px;
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 16px 0;
+    }
+    .card-head h2 { font-size: 20px; overflow-wrap: anywhere; }
+    .card-address { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+
+    .icon-btn {
+      flex: none;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
       border-radius: 8px;
-      background: #1c2b41;
+      border: 1px solid var(--line);
+      background: var(--raised);
+      cursor: pointer;
+    }
+    .icon-btn:hover { border-color: var(--accent); }
+    .icon-btn svg { transition: transform 0.15s ease; }
+    .card.collapsed .icon-btn svg { transform: rotate(180deg); }
+
+    .card-body {
+      padding: 12px 16px 16px;
+      overflow-y: auto;
+    }
+    .card.collapsed .card-body { display: none; }
+    .card.collapsed .card-head { padding-bottom: 14px; }
+
+    .card-desc { margin: 0 0 12px; max-width: 62ch; }
+
+    .photo-box {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .photo-box p { margin: 0; }
+    .photo-box .ok { color: var(--accent); font-weight: 700; }
+    .photo-box .warn { color: var(--warn); font-weight: 700; }
+    .photo-box .sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+    .facts { margin: 0; display: grid; gap: 10px; }
+    .fact dt { font-size: 13px; color: var(--muted); }
+    .fact dd { margin: 1px 0 0; overflow-wrap: anywhere; }
+
+    .card-actions { margin-top: 14px; }
+    .btn {
+      padding: 9px 14px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--raised);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn:hover { border-color: var(--accent); }
+
+    .credit {
+      grid-area: 1 / 1;
+      z-index: 4;
+      place-self: end end;
+      margin: 0 12px 10px 0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(10, 22, 40, 0.8);
       font-size: 12px;
-      overflow-wrap: anywhere;
+      color: var(--muted);
     }
+    .credit a { color: var(--accent); }
 
-    #message {
-      margin-top: 12px;
-      color: #fbbf24;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    #message.ok { color: #38d9a9; }
-
-    #imageInfo {
-      margin-top: 8px;
-      color: #b6c4d7;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    #credit {
-      margin-top: 8px;
-      color: #8fa0b8;
-      font-size: 11px;
-    }
-    #credit a { color: #38d9a9; }
-
-    .place:focus-visible, #search:focus-visible, #credit a:focus-visible {
-      outline: 3px solid #38d9a9;
-      outline-offset: 2px;
-    }
-
-    @media (max-width: 760px) {
+    /* ---------- Mobile ---------- */
+    @media (max-width: 860px) {
       header { padding: 0 14px; }
+      .status { font-size: 12px; max-width: 55%; }
+
       main {
+        display: block;
         height: auto;
-        min-height: calc(100vh - 68px);
-        grid-template-columns: 1fr;
+        min-height: 0;
       }
-      aside {
-        max-height: 260px;
+
+      .stage {
+        display: grid;
+        grid-template-rows: 46vh auto;
+        background: var(--bg);
+      }
+      #pano { grid-area: 1 / 1; min-height: 260px; }
+      .stage-empty, .loading-chip { grid-row: 1; }
+      .credit { grid-row: 1; }
+
+      .card {
+        grid-area: 2 / 1;
+        align-self: stretch;
+        justify-self: stretch;
+        width: auto;
+        max-height: none;
+        margin: 0;
+        border-radius: 0;
+        border-width: 1px 0 0;
+        box-shadow: none;
+        background: var(--panel);
+      }
+
+      .list-panel {
         border-right: none;
-        border-bottom: 1px solid #29364b;
+        border-top: 1px solid var(--line);
       }
-      .workspace { min-height: 65vh; }
-      #details { max-height: 250px; }
+      #places { overflow: visible; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation-duration: 2.4s; }
+      .icon-btn svg { transition: none; }
     }
   </style>
 </head>
 
 <body>
+  <a class="skip-link" href="#places">Μετάβαση στη λίστα μερών</a>
+
   <header>
-    <div class="brand">City4All <span>XR</span></div>
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="14" cy="14" r="11" fill="none" stroke="#35e0c2" stroke-width="3"/>
+        <circle cx="14" cy="14" r="4" fill="#35e0c2"/>
+      </svg>
+      <span>City4All <span class="xr">XR</span></span>
+    </div>
     <div class="status" id="status" role="status" aria-live="polite">Φόρτωση Mapillary…</div>
   </header>
 
   <main>
-    <aside>
-      <h2>Προσβάσιμα σημεία</h2>
-      <div class="muted">
-        Επίλεξε ένα σημείο για να αναζητήσεις κοντινή φωτογραφία δρόμου
-        (Mapillary) και να δεις τα διαθέσιμα στοιχεία του.
+    <aside class="list-panel" aria-label="Προσβάσιμα μέρη">
+      <div class="list-head">
+        <h1>Προσβάσιμα μέρη</h1>
+        <p class="lead">Διάλεξε ένα μέρος για να δεις τον δρόμο γύρω του και τα στοιχεία προσβασιμότητας.</p>
+
+        <div class="search-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+          </svg>
+          <input id="search" type="search" autocomplete="off"
+                 placeholder="Αναζήτηση με όνομα ή στοιχείο"
+                 aria-label="Αναζήτηση μέρους" />
+        </div>
+        <p class="count" id="count" aria-live="polite"></p>
       </div>
 
-      <input id="search" type="search"
-             placeholder="Αναζήτηση σημείου…" />
-
-      <div id="places">
-        <p class="muted">Φόρτωση σημείων από το ArcGIS…</p>
-      </div>
+      <ul id="places">
+        <li class="list-note">Φόρτωση μερών από το ArcGIS…</li>
+      </ul>
     </aside>
 
-    <section class="workspace">
+    <section class="stage" id="stage" aria-label="Εικόνα δρόμου">
       <div id="pano" aria-label="Πανοραμική εικόνα δρόμου"></div>
 
-      <section id="details">
-        <h2 id="detailTitle">Καλώς ήρθες στο City4All XR</h2>
-        <div class="muted" id="detailText">
-          Επίλεξε ένα σημείο από τη λίστα για να εμφανιστούν οι πληροφορίες του.
+      <div class="stage-empty" id="stageEmpty">
+        <h2 id="stageEmptyTitle">Διάλεξε ένα μέρος</h2>
+        <p id="stageEmptyText">Η εικόνα του δρόμου θα εμφανιστεί εδώ. Σύρε για να κοιτάξεις γύρω.</p>
+      </div>
+
+      <div class="loading-chip" id="loadingChip" hidden role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Αναζήτηση φωτογραφίας δρόμου…</span>
+      </div>
+
+      <article class="card" id="card" aria-labelledby="detailTitle" hidden>
+        <div class="card-head">
+          <div>
+            <h2 id="detailTitle"></h2>
+            <p class="card-address" id="detailAddress" hidden></p>
+          </div>
+          <button class="icon-btn" id="collapseBtn" type="button"
+                  aria-expanded="true" aria-controls="cardBody"
+                  aria-label="Σύμπτυξη κάρτας" title="Σύμπτυξη κάρτας">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 15l6-6 6 6"/>
+            </svg>
+          </button>
         </div>
-        <div id="attributes"></div>
-        <div id="message" role="status" aria-live="polite">
-          Η εικόνα δρόμου προέρχεται από το Mapillary και υπάρχει μόνο όπου έχουν
-          ανεβάσει φωτογραφίες εθελοντές.
+
+        <div class="card-body" id="cardBody">
+          <p class="card-desc" id="detailText" hidden></p>
+
+          <div class="photo-box" id="photoBox" role="status" aria-live="polite"></div>
+
+          <dl class="facts" id="facts"></dl>
+
+          <div class="card-actions">
+            <button class="btn" id="backBtn" type="button">Πίσω στη λίστα</button>
+          </div>
         </div>
-        <div id="imageInfo"></div>
-        <div id="credit">
-          Εικόνες δρόμου: <a href="https://www.mapillary.com" target="_blank" rel="noopener">© Mapillary</a>,
-          συνεισφέροντες χρήστες, CC BY-SA 4.0.
-        </div>
-      </section>
+      </article>
+
+      <p class="credit">
+        Εικόνες δρόμου: <a href="https://www.mapillary.com" target="_blank" rel="noopener">© Mapillary</a>, CC BY-SA 4.0
+      </p>
     </section>
   </main>
 
@@ -215,53 +486,32 @@
   <script>
     const ARCGIS_URL =
       "https://services4.arcgis.com/D1oWZQPmnyTvHNmk/arcgis/rest/services/survey123_d2ca09a7753a4dca8a8a5e3c84c8e862/FeatureServer/0/query";
+    const LAYER_URL = ARCGIS_URL.replace(/\/query$/, "");
 
     const GRAPH_URL = "https://graph.mapillary.com/images";
     const IMAGE_FIELDS = "id,geometry,captured_at,compass_angle,is_pano";
 
+    const $ = id => document.getElementById(id);
+
     let viewer = null;
-    let currentSearch = 0;   // guards against out-of-order responses
-    let allPlaces = [];
+    let currentSearch = 0;      // guards against out-of-order Mapillary responses
+    let items = [];             // prepared places: { feature, id, name, sub, ... }
     let selectedId = null;
+    let fieldInfo = {};         // lower-case field name -> { name, alias, type, domain }
+    let roles = { name: null, desc: null, address: null };
+    let lastPhoto = null;       // { lat, lng, capturedAt, distance } of the photo being shown
 
-    function setStatus(message) {
-      document.getElementById("status").textContent = message;
+    /* ---------- Small helpers ---------- */
+
+    function setStatus(message, kind = "") {
+      const el = $("status");
+      el.textContent = message;
+      el.className = "status" + (kind ? " " + kind : "");
     }
 
-    function valueFor(attributes, candidates) {
-      const keys = Object.keys(attributes || {});
-      for (const candidate of candidates) {
-        const key = keys.find(k => k.toLowerCase() === candidate.toLowerCase());
-        if (key && attributes[key] !== null && attributes[key] !== "") {
-          return String(attributes[key]);
-        }
-      }
-      return "";
-    }
+    function isMobile() { return window.matchMedia("(max-width: 860px)").matches; }
+    function reducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 
-    function placeName(feature, index) {
-      const a = feature.attributes || {};
-      return valueFor(a, [
-        "name", "title", "place_name", "business_name",
-        "location_name", "όνομα", "ονομασία"
-      ]) || `Σημείο City4All ${index + 1}`;
-    }
-
-    function placeDescription(feature) {
-      const a = feature.attributes || {};
-      return valueFor(a, [
-        "description", "comments", "notes", "details",
-        "accessibility", "περιγραφή", "σχόλια"
-      ]) || "Δεν υπάρχει διαθέσιμη περιγραφή στα δεδομένα.";
-    }
-
-    function setMessage(text, ok = false) {
-      const el = document.getElementById("message");
-      el.textContent = text;
-      el.className = ok ? "ok" : "";
-    }
-
-    // Distance in metres between two lat/lng points (haversine).
     function distanceMeters(lat1, lng1, lat2, lng2) {
       const R = 6371000, rad = Math.PI / 180;
       const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
@@ -270,54 +520,355 @@
       return 2 * R * Math.asin(Math.sqrt(h));
     }
 
+    /* ---------- Reading names and labels from the ArcGIS layer ---------- */
+
+    // Fields that are bookkeeping, not information for visitors.
+    const SYSTEM_FIELD = /^(objectid|fid|globalid|parentglobalid|creationdate|creator|editdate|editor|shape.*|x|y|esri_oid)$/i;
+    const NOT_A_NAME = /creator|editor|email|e-mail|phone|τηλ|mobile|url|link|photo|image|φωτο/i;
+    const NAME_HINT = /(^|[^a-z])(name|title)([^a-z]|$)|όνομα|ονομασ|επωνυμ|τίτλ|κατάστημα|επιχείρηση|χώρου|μέρους|business|venue|shop|place/i;
+    const ADDRESS_HINT = /address|διεύθυνση|οδός|οδου|street|τοποθεσία|location/i;
+    const DESC_HINT = /description|comment|note|περιγραφ|σχόλι|παρατηρ|details|λεπτομέρ/i;
+
+    const isText = f => f.type === "esriFieldTypeString";
+
+    function fieldLabel(key) {
+      const f = fieldInfo[key.toLowerCase()];
+      return (f && f.alias) ? f.alias : key;
+    }
+
+    function pickField(candidates, hint, avoid) {
+      return candidates.find(f =>
+        (hint.test(f.name) || hint.test(f.alias || "")) &&
+        !(avoid && (avoid.test(f.name) || avoid.test(f.alias || "")))
+      ) || null;
+    }
+
+    function resolveFields(meta, sampleFeatures) {
+      fieldInfo = {};
+      let fields = [];
+
+      if (meta && Array.isArray(meta.fields)) {
+        fields = meta.fields.map(f => ({
+          name: f.name, alias: f.alias || f.name, type: f.type, domain: f.domain || null
+        }));
+      } else {
+        // Metadata unavailable: fall back to the keys present in the data.
+        const keys = new Set();
+        sampleFeatures.slice(0, 50).forEach(ft => Object.keys(ft.attributes || {}).forEach(k => keys.add(k)));
+        fields = [...keys].map(k => ({ name: k, alias: k, type: "esriFieldTypeString", domain: null }));
+      }
+
+      fields.forEach(f => { fieldInfo[f.name.toLowerCase()] = f; });
+
+      const usable = fields.filter(f => isText(f) && !SYSTEM_FIELD.test(f.name));
+
+      roles = {
+        name: pickField(usable, NAME_HINT, NOT_A_NAME),
+        address: pickField(usable, ADDRESS_HINT, NOT_A_NAME),
+        desc: pickField(usable, DESC_HINT, NOT_A_NAME)
+      };
+
+      // Optional manual override from config.js: CITY4ALL_FIELDS = { name: "...", ... }
+      if (typeof CITY4ALL_FIELDS === "object" && CITY4ALL_FIELDS) {
+        ["name", "address", "desc"].forEach(role => {
+          const wanted = String(CITY4ALL_FIELDS[role] || "").trim().toLowerCase();
+          if (wanted && fieldInfo[wanted]) roles[role] = fieldInfo[wanted];
+        });
+      }
+
+      console.info("City4All field roles:", {
+        name: roles.name && roles.name.name,
+        address: roles.address && roles.address.name,
+        desc: roles.desc && roles.desc.name,
+        allFields: fields.map(f => `${f.name} (${f.alias})`)
+      });
+    }
+
+    // Turns a raw attribute into display text: coded domains, dates, trimming.
+    function displayValue(key, raw) {
+      if (raw === null || raw === undefined) return "";
+      const f = fieldInfo[key.toLowerCase()];
+
+      if (f && f.type === "esriFieldTypeDate" && Number.isFinite(Number(raw))) {
+        return new Date(Number(raw)).toLocaleDateString("el-GR");
+      }
+
+      const text = String(raw).trim();
+      if (!text) return "";
+
+      const coded = f && f.domain && f.domain.type === "codedValue" ? f.domain.codedValues : null;
+      if (coded) {
+        const lookup = code => {
+          const hit = coded.find(c => String(c.code) === String(code).trim());
+          return hit ? hit.name : String(code).trim();
+        };
+        return text.includes(",") ? text.split(",").map(lookup).join(", ") : lookup(text);
+      }
+      return text;
+    }
+
+    function attrText(feature, field) {
+      if (!field) return "";
+      const a = feature.attributes || {};
+      const key = Object.keys(a).find(k => k.toLowerCase() === field.name.toLowerCase());
+      return key ? displayValue(key, a[key]) : "";
+    }
+
+    function buildItem(feature) {
+      const a = feature.attributes || {};
+      const id = a.OBJECTID ?? a.objectid ?? a.FID ?? `${feature.geometry.x},${feature.geometry.y}`;
+
+      let name = attrText(feature, roles.name);
+      const address = attrText(feature, roles.address);
+      const desc = attrText(feature, roles.desc);
+
+      // No usable name field value: use another name-like text field, then the address,
+      // then the first short piece of text. Never a bare number.
+      if (!name) {
+        for (const key of Object.keys(a)) {
+          const f = fieldInfo[key.toLowerCase()];
+          if (f && isText(f) && !SYSTEM_FIELD.test(key) && NAME_HINT.test(`${key} ${f.alias}`) && !NOT_A_NAME.test(key)) {
+            name = displayValue(key, a[key]);
+            if (name) break;
+          }
+        }
+      }
+      if (!name) name = address;
+      if (!name) {
+        for (const key of Object.keys(a)) {
+          const f = fieldInfo[key.toLowerCase()];
+          if (SYSTEM_FIELD.test(key) || NOT_A_NAME.test(key) || (f && !isText(f))) continue;
+          const v = displayValue(key, a[key]);
+          if (v && v.length <= 70) { name = v; break; }
+        }
+      }
+      if (!name) name = "Μέρος χωρίς όνομα";
+
+      const searchText = Object.keys(a)
+        .filter(k => !SYSTEM_FIELD.test(k))
+        .map(k => displayValue(k, a[k]))
+        .join(" ")
+        .toLowerCase();
+
+      return { feature, id, name, address, desc, sub: address || desc, searchText };
+    }
+
+    /* ---------- List ---------- */
+
+    function visibleItems() {
+      const q = $("search").value.trim().toLowerCase();
+      return q ? items.filter(it => it.searchText.includes(q) || it.name.toLowerCase().includes(q)) : items;
+    }
+
+    function renderPlaces() {
+      const list = $("places");
+      const shown = visibleItems();
+      list.innerHTML = "";
+
+      const q = $("search").value.trim();
+      $("count").textContent = items.length
+        ? (q ? `${shown.length} από ${items.length} μέρη` : `${items.length} μέρη`)
+        : "";
+
+      if (!shown.length) {
+        const li = document.createElement("li");
+        li.className = "list-note";
+        li.textContent = items.length
+          ? `Δεν βρέθηκε μέρος για «${q}». Δοκίμασε άλλη λέξη ή σβήσε την αναζήτηση.`
+          : "Δεν βρέθηκαν μέρη με συντεταγμένες.";
+        list.appendChild(li);
+        return;
+      }
+
+      shown.forEach(it => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "place";
+        btn.dataset.id = String(it.id);
+        if (String(it.id) === String(selectedId)) btn.setAttribute("aria-current", "true");
+
+        const name = document.createElement("span");
+        name.className = "p-name";
+        name.textContent = it.name;
+        btn.appendChild(name);
+
+        if (it.sub) {
+          const sub = document.createElement("span");
+          sub.className = "p-sub";
+          sub.textContent = it.sub;
+          btn.appendChild(sub);
+        }
+
+        btn.addEventListener("click", () => selectPlace(it));
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    /* ---------- Selecting a place ---------- */
+
+    function selectPlace(it) {
+      selectedId = it.id;
+      lastPhoto = null;
+      renderPlaces();
+      renderCard(it);
+
+      if (isMobile()) {
+        $("stage").scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+      }
+      openImageryNear(it);
+    }
+
+    function renderCard(it) {
+      const f = it.feature;
+      $("card").hidden = false;
+      $("detailTitle").textContent = it.name;
+
+      const addr = $("detailAddress");
+      addr.hidden = !it.address || it.address === it.name;
+      addr.textContent = it.address;
+
+      const desc = $("detailText");
+      desc.hidden = !it.desc || it.desc === it.name;
+      desc.textContent = it.desc;
+
+      const facts = $("facts");
+      facts.innerHTML = "";
+
+      const used = new Set(
+        [roles.name, roles.address, roles.desc].filter(Boolean).map(r => r.name.toLowerCase())
+      );
+
+      Object.keys(f.attributes || {}).forEach(key => {
+        if (SYSTEM_FIELD.test(key) || used.has(key.toLowerCase())) return;
+        const value = displayValue(key, f.attributes[key]);
+        if (!value) return;
+        addFact(fieldLabel(key), value);
+      });
+
+      addFact("Συντεταγμένες μέρους",
+        `${Number(f.geometry.y).toFixed(5)}, ${Number(f.geometry.x).toFixed(5)}`);
+
+      renderPhotoBox("idle");
+    }
+
+    function addFact(label, value) {
+      const row = document.createElement("div");
+      row.className = "fact";
+      const dt = document.createElement("dt");
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      row.append(dt, dd);
+      $("facts").appendChild(row);
+    }
+
+    function renderPhotoBox(state, extra) {
+      const box = $("photoBox");
+      box.innerHTML = "";
+      const p = document.createElement("p");
+      const sub = document.createElement("p");
+      sub.className = "sub";
+
+      if (state === "loading") {
+        p.textContent = "Αναζήτηση φωτογραφίας δρόμου κοντά στο μέρος…";
+      } else if (state === "found") {
+        p.className = "ok";
+        p.textContent = `Φωτογραφία δρόμου σε απόσταση ~${Math.round(extra.distance)} μ. από το μέρος`;
+        sub.textContent = photoDetails(extra) +
+          " Η φωτογραφία είναι τραβηγμένη από τον δρόμο, όχι ακριβώς από το σημείο του μέρους.";
+      } else if (state === "none") {
+        p.className = "warn";
+        p.textContent = "Δεν υπάρχει φωτογραφία δρόμου του Mapillary σε περίπου 150 μ. από το μέρος.";
+        sub.textContent = "Τα στοιχεία προσβασιμότητας παραμένουν διαθέσιμα. Διάλεξε άλλο μέρος ή ανέβασε φωτογραφίες στο Mapillary.";
+      } else if (state === "no-viewer") {
+        p.className = "warn";
+        p.textContent = extra || "Η εικόνα δρόμου δεν είναι διαθέσιμη αυτή τη στιγμή.";
+      } else if (state === "error") {
+        p.className = "warn";
+        p.textContent = extra;
+      } else {
+        p.textContent = "Επιλέχθηκε μέρος. Ετοιμάζω την εικόνα δρόμου…";
+      }
+
+      box.appendChild(p);
+      if (sub.textContent) box.appendChild(sub);
+    }
+
+    function photoDetails(photo) {
+      let t = `Θέση φωτογραφίας: ${photo.lat.toFixed(5)}, ${photo.lng.toFixed(5)}.`;
+      if (photo.capturedAt) t += ` Λήψη: ${new Date(photo.capturedAt).toLocaleDateString("el-GR")}.`;
+      return t;
+    }
+
+    function showStageEmpty(title, text, warn = false) {
+      $("stageEmptyTitle").textContent = title;
+      $("stageEmptyText").textContent = text;
+      $("stageEmpty").className = "stage-empty" + (warn ? " warn" : "");
+      $("stageEmpty").hidden = false;
+    }
+
+    /* ---------- Mapillary ---------- */
+
     function initViewer() {
       const token = (typeof MAPILLARY_TOKEN === "string") ? MAPILLARY_TOKEN.trim() : "";
 
       if (typeof mapillary === "undefined") {
-        setStatus("Αποτυχία φόρτωσης Mapillary");
-        setMessage("Δεν φορτώθηκε η βιβλιοθήκη MapillaryJS. Έλεγξε τη σύνδεση στο διαδίκτυο.");
+        setStatus("Αποτυχία φόρτωσης Mapillary", "problem");
+        showStageEmpty("Δεν φορτώθηκε η εικόνα δρόμου",
+          "Η βιβλιοθήκη MapillaryJS δεν φορτώθηκε. Έλεγξε τη σύνδεσή σου και ανανέωσε τη σελίδα.", true);
       } else if (!token) {
-        setStatus("Λείπει το Mapillary token");
-        setMessage("Δεν έχει οριστεί Mapillary token. Άνοιξε το config.js και βάλε το client token σου. Τα σημεία City4All εμφανίζονται κανονικά.");
+        setStatus("Λείπει το Mapillary token", "problem");
+        showStageEmpty("Λείπει το Mapillary token",
+          "Άνοιξε το config.js και βάλε το client token σου. Τα μέρη εμφανίζονται κανονικά στη λίστα.", true);
       } else if (typeof mapillary.isSupported === "function" && !mapillary.isSupported()) {
-        setStatus("Ο browser δεν υποστηρίζει WebGL");
-        setMessage("Ο browser ή η συσκευή δεν υποστηρίζει WebGL, που απαιτείται για την πανοραμική εικόνα.");
+        setStatus("Χωρίς υποστήριξη WebGL", "problem");
+        showStageEmpty("Ο browser δεν υποστηρίζει WebGL",
+          "Η πανοραμική εικόνα χρειάζεται WebGL. Δοκίμασε άλλον browser ή άλλη συσκευή.", true);
       } else {
         try {
-          viewer = new mapillary.Viewer({
-            accessToken: token,
-            container: "pano"
-          });
+          viewer = new mapillary.Viewer({ accessToken: token, container: "pano" });
 
-          // Show where the viewer currently is (updates when the user navigates).
+          // Keep the photo position in sync when the user moves to a neighbouring image.
           viewer.on("image", event => {
             const img = event.image;
-            if (img && img.lngLat) showImageInfo(img.id, img.lngLat.lat, img.lngLat.lng, img.capturedAt);
+            if (!img || !img.lngLat) return;
+            const it = items.find(x => String(x.id) === String(selectedId));
+            lastPhoto = {
+              lat: img.lngLat.lat,
+              lng: img.lngLat.lng,
+              capturedAt: img.capturedAt,
+              distance: it ? distanceMeters(Number(it.feature.geometry.y), Number(it.feature.geometry.x),
+                                            img.lngLat.lat, img.lngLat.lng) : 0
+            };
+            if (it && !$("loadingChip").hidden === false && $("photoBox").textContent) {
+              renderPhotoBox("found", lastPhoto);
+            }
           });
 
           window.addEventListener("resize", () => viewer && viewer.resize());
-          setStatus("Mapillary έτοιμο");
+          setStatus("Mapillary έτοιμο", "ready");
         } catch (error) {
           console.error(error);
-          setStatus("Σφάλμα Mapillary");
-          setMessage("Η εκκίνηση του Mapillary απέτυχε. Έλεγξε ότι το token είναι σωστό.");
+          setStatus("Σφάλμα Mapillary", "problem");
+          showStageEmpty("Η εικόνα δρόμου δεν ξεκίνησε",
+            "Έλεγξε ότι το token στο config.js είναι σωστό και ανανέωσε τη σελίδα.", true);
         }
       }
 
       loadPlaces();   // ArcGIS data loads regardless of imagery availability
     }
 
-    // Finds the nearest Mapillary image to a point. Radius search is limited
-    // to 50 m by the API, so fall back to a small bounding box (< 0.01° wide).
+    // Finds the nearest Mapillary image. The radius search is limited to 50 m by the API,
+    // so fall back to a small bounding box (the API requires it to be under 0.01° wide).
     async function findNearestImage(lat, lng) {
       const token = MAPILLARY_TOKEN.trim();
 
       async function query(extra) {
         const params = new URLSearchParams({ fields: IMAGE_FIELDS, access_token: token, ...extra });
         const response = await fetch(`${GRAPH_URL}?${params}`);
-        if (response.status === 401 || response.status === 403) {
-          throw new Error("TOKEN_REJECTED");
-        }
+        if (response.status === 401 || response.status === 403) throw new Error("TOKEN_REJECTED");
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const json = await response.json();
         if (json.error) throw new Error(json.error.message || "Mapillary API error");
@@ -327,7 +878,7 @@
       let images = await query({ lat, lng, radius: 50, limit: 100 });
 
       if (images.length === 0) {
-        const dLat = 0.0015, dLng = 0.0019;   // ≈ 165 m × 165 m half-box at this latitude
+        const dLat = 0.0015, dLng = 0.0019;   // about 165 m each way
         const bbox = [lng - dLng, lat - dLat, lng + dLng, lat + dLat].join(",");
         images = await query({ bbox, limit: 100 });
       }
@@ -337,178 +888,148 @@
         const coords = img.geometry && img.geometry.coordinates;
         if (!coords) continue;
         const d = distanceMeters(lat, lng, coords[1], coords[0]);
-        // Prefer true panoramas when two images are about equally close.
-        const score = d - (img.is_pano ? 5 : 0);
+        const score = d - (img.is_pano ? 5 : 0);   // prefer true panoramas when about equally close
         if (!best || score < best.score) best = { img, d, score };
       }
       return best;
     }
 
-    function showImageInfo(imageId, lat, lng, capturedAt) {
-      const place = allPlaces.find(f => String(placeId(f)) === String(selectedId));
-      let text = `Θέση φωτογραφίας: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      if (capturedAt) text += ` · Λήψη: ${new Date(capturedAt).toLocaleDateString("el-GR")}`;
-      if (place) {
-        const d = Math.round(distanceMeters(
-          Number(place.geometry.y), Number(place.geometry.x), lat, lng));
-        text += ` · Απόσταση από το σημείο City4All: ~${d} μ.`;
-      }
-      document.getElementById("imageInfo").textContent = text;
-    }
-
-    function placeId(feature) {
-      return feature.attributes?.OBJECTID ??
-             feature.attributes?.FID ??
-             `${feature.geometry.x},${feature.geometry.y}`;
-    }
-
-    async function loadPlaces() {
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "*",
-        returnGeometry: "true",
-        outSR: "4326",
-        resultRecordCount: "2000",
-        f: "json"
-      });
-
-      try {
-        const response = await fetch(`${ARCGIS_URL}?${params}`);
-        if (!response.ok) throw new Error("ArcGIS request failed");
-
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message || "ArcGIS error");
-
-        allPlaces = (data.features || []).filter(f =>
-          f.geometry &&
-          Number.isFinite(Number(f.geometry.x)) &&
-          Number.isFinite(Number(f.geometry.y))
-        );
-
-        renderPlaces(allPlaces);
-        setStatus(`${allPlaces.length} σημεία φορτώθηκαν`);
-
-        if (allPlaces.length === 0) {
-          document.getElementById("places").innerHTML =
-            '<p class="muted">Δεν βρέθηκαν σημεία με συντεταγμένες.</p>';
-        }
-      } catch (error) {
-        console.error(error);
-        setStatus("Αποτυχία φόρτωσης");
-        document.getElementById("places").innerHTML =
-          '<p class="muted">Δεν φορτώθηκαν τα σημεία. Έλεγξε τη σύνδεση και τα δικαιώματα πρόσβασης του ArcGIS layer.</p>';
-      }
-    }
-
-    function renderPlaces(places) {
-      const container = document.getElementById("places");
-      container.innerHTML = "";
-
-      places.forEach(feature => {
-        const id = feature.attributes?.OBJECTID ??
-                   feature.attributes?.FID ??
-                   `${feature.geometry.x},${feature.geometry.y}`;
-
-        const button = document.createElement("button");
-        button.className = "place" + (String(id) === String(selectedId) ? " active" : "");
-        button.innerHTML = "";
-
-        const title = document.createElement("strong");
-        title.textContent = placeName(feature, allPlaces.indexOf(feature));
-
-        const subtitle = document.createElement("small");
-        subtitle.textContent = placeDescription(feature);
-
-        button.append(title, subtitle);
-        button.addEventListener("click", () => selectPlace(feature, id));
-        container.appendChild(button);
-      });
-    }
-
-    function selectPlace(feature, id) {
-      selectedId = id;
-      renderPlaces(
-        allPlaces.filter(f => {
-          const search = document.getElementById("search").value.trim().toLowerCase();
-          return !search ||
-            placeName(f, allPlaces.indexOf(f)).toLowerCase().includes(search) ||
-            placeDescription(f).toLowerCase().includes(search);
-        })
-      );
-
-      const a = feature.attributes || {};
-      document.getElementById("detailTitle").textContent =
-        placeName(feature, allPlaces.indexOf(feature));
-      document.getElementById("detailText").textContent =
-        placeDescription(feature);
-
-      const attributes = document.getElementById("attributes");
-      attributes.innerHTML = "";
-
-      Object.entries(a).forEach(([key, value]) => {
-        if (value === null || value === "" || key.toLowerCase().includes("shape")) return;
-        const item = document.createElement("div");
-        item.className = "attribute";
-        item.textContent = `${key}: ${String(value)}`;
-        attributes.appendChild(item);
-      });
-
-      openImageryNear(Number(feature.geometry.y), Number(feature.geometry.x));
-    }
-
-    async function openImageryNear(lat, lng) {
-      document.getElementById("imageInfo").textContent = "";
+    async function openImageryNear(it) {
+      const lat = Number(it.feature.geometry.y);
+      const lng = Number(it.feature.geometry.x);
 
       if (!viewer) {
-        // Viewer unavailable (no token / no WebGL / library failed): message already shown.
+        renderPhotoBox("no-viewer", $("status").textContent.includes("token")
+          ? "Λείπει το Mapillary token, οπότε δεν υπάρχει εικόνα δρόμου. Τα στοιχεία του μέρους φαίνονται κανονικά."
+          : "Η εικόνα δρόμου δεν είναι διαθέσιμη αυτή τη στιγμή. Τα στοιχεία του μέρους φαίνονται κανονικά.");
         return;
       }
 
       const searchId = ++currentSearch;
-      setMessage("Αναζήτηση κοντινής φωτογραφίας δρόμου…");
+      $("loadingChip").hidden = false;
+      renderPhotoBox("loading");
 
       try {
         const best = await findNearestImage(lat, lng);
-        if (searchId !== currentSearch) return;   // user already picked another point
+        if (searchId !== currentSearch) return;   // another place was picked meanwhile
 
         if (!best) {
-          setMessage("Δεν βρέθηκε φωτογραφία δρόμου του Mapillary σε περίπου 150 μέτρα από το σημείο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες. Δοκίμασε άλλο σημείο.");
+          showStageEmpty("Δεν υπάρχει φωτογραφία δρόμου εδώ",
+            "Κανείς δεν έχει ανεβάσει ακόμα φωτογραφίες στο Mapillary κοντά σε αυτό το μέρος.", true);
+          renderPhotoBox("none");
           return;
         }
 
         await viewer.moveTo(best.img.id);
         if (searchId !== currentSearch) return;
 
-        setMessage(
-          `Βρέθηκε φωτογραφία σε απόσταση ~${Math.round(best.d)} μ. από το σημείο. ` +
-          "Η θέση της φωτογραφίας δεν ταυτίζεται με τη θέση του σημείου. " +
-          "Σύρε για να κοιτάξεις γύρω και κάνε κλικ σε γειτονικές θέσεις για να κινηθείς.",
-          true
-        );
-        showImageInfo(best.img.id, best.img.geometry.coordinates[1],
-                      best.img.geometry.coordinates[0], best.img.captured_at);
+        $("stageEmpty").hidden = true;
+        lastPhoto = {
+          lat: best.img.geometry.coordinates[1],
+          lng: best.img.geometry.coordinates[0],
+          capturedAt: best.img.captured_at,
+          distance: best.d
+        };
+        renderPhotoBox("found", lastPhoto);
       } catch (error) {
         if (searchId !== currentSearch) return;
         console.error(error);
-        if (error.message === "TOKEN_REJECTED") {
-          setMessage("Το Mapillary απέρριψε το token (401/403). Έλεγξε ότι το client token στο config.js είναι σωστό και ενεργό.");
-        } else {
-          setMessage("Αποτυχία επικοινωνίας με το Mapillary. Δοκίμασε ξανά σε λίγο. Οι πληροφορίες του City4All παραμένουν διαθέσιμες.");
-        }
+        const msg = error.message === "TOKEN_REJECTED"
+          ? "Το Mapillary απέρριψε το token (401/403). Έλεγξε ότι το client token στο config.js είναι σωστό."
+          : "Δεν έγινε σύνδεση με το Mapillary. Δοκίμασε ξανά σε λίγο.";
+        showStageEmpty("Η εικόνα δρόμου δεν φόρτωσε", msg, true);
+        renderPhotoBox("error", msg);
+      } finally {
+        if (searchId === currentSearch) $("loadingChip").hidden = true;
       }
     }
 
-    document.getElementById("search").addEventListener("input", event => {
-      const query = event.target.value.trim().toLowerCase();
-      renderPlaces(allPlaces.filter(f =>
-        placeName(f, allPlaces.indexOf(f)).toLowerCase().includes(query) ||
-        placeDescription(f).toLowerCase().includes(query)
-      ));
-    });
-  </script>
+    /* ---------- ArcGIS data ---------- */
 
-  <script>
-    // Start once the page and the (deferred) Mapillary script are ready.
+    async function fetchAllFeatures() {
+      const all = [];
+      const pageSize = 1000;
+      for (let page = 0; page < 20; page++) {
+        const params = new URLSearchParams({
+          where: "1=1",
+          outFields: "*",
+          returnGeometry: "true",
+          outSR: "4326",
+          resultOffset: String(page * pageSize),
+          resultRecordCount: String(pageSize),
+          f: "json"
+        });
+        const response = await fetch(`${ARCGIS_URL}?${params}`);
+        if (!response.ok) throw new Error("ArcGIS request failed");
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message || "ArcGIS error");
+        all.push(...(data.features || []));
+        if (!data.exceededTransferLimit) break;
+      }
+      return all;
+    }
+
+    async function fetchLayerMeta() {
+      try {
+        const response = await fetch(`${LAYER_URL}?f=json`);
+        if (!response.ok) return null;
+        const meta = await response.json();
+        return meta.error ? null : meta;
+      } catch (error) {
+        console.warn("Layer metadata unavailable", error);
+        return null;
+      }
+    }
+
+    async function loadPlaces() {
+      try {
+        const [features, meta] = await Promise.all([fetchAllFeatures(), fetchLayerMeta()]);
+
+        const withCoords = features.filter(f =>
+          f.geometry &&
+          Number.isFinite(Number(f.geometry.x)) &&
+          Number.isFinite(Number(f.geometry.y))
+        );
+
+        resolveFields(meta, withCoords);
+        items = withCoords.map(buildItem)
+          .sort((a, b) => a.name.localeCompare(b.name, "el"));
+
+        renderPlaces();
+
+        const mapillaryReady = $("status").classList.contains("ready");
+        if (mapillaryReady) setStatus(`${items.length} μέρη φορτώθηκαν`, "ready");
+      } catch (error) {
+        console.error(error);
+        $("count").textContent = "";
+        $("places").innerHTML = "";
+        const li = document.createElement("li");
+        li.className = "list-note";
+        li.textContent = "Δεν φορτώθηκαν τα μέρη. Έλεγξε τη σύνδεσή σου και ότι το layer του ArcGIS είναι δημόσιο, και ανανέωσε τη σελίδα.";
+        $("places").appendChild(li);
+        setStatus("Αποτυχία φόρτωσης μερών", "problem");
+      }
+    }
+
+    /* ---------- Events ---------- */
+
+    $("search").addEventListener("input", renderPlaces);
+
+    $("collapseBtn").addEventListener("click", () => {
+      const card = $("card");
+      const collapsed = card.classList.toggle("collapsed");
+      $("collapseBtn").setAttribute("aria-expanded", String(!collapsed));
+      const label = collapsed ? "Ανάπτυξη κάρτας" : "Σύμπτυξη κάρτας";
+      $("collapseBtn").setAttribute("aria-label", label);
+      $("collapseBtn").title = label;
+    });
+
+    $("backBtn").addEventListener("click", () => {
+      const target = document.querySelector('.place[aria-current="true"]') || $("search");
+      target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+    });
+
     window.addEventListener("load", initViewer);
   </script>
 </body>
