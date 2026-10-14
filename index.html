@@ -3,39 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a1628" />
+  <meta name="theme-color" content="#ffffff" />
   <title>City4All XR | Accessible World</title>
 
-  <!-- Atkinson Hyperlegible: typeface designed for low-vision readers -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap&subset=greek" rel="stylesheet" />
 
   <!-- MapillaryJS stylesheet (street-level imagery viewer, MIT licensed) -->
   <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css" />
 
   <style>
     :root {
-      --bg: #0a1628;
-      --panel: #0f1f38;
-      --raised: #152a48;
-      --line: #243b5e;
-      --text: #eef3fa;
-      --muted: #a3b5cf;
-      --accent: #35e0c2;
-      --accent-ink: #04231e;
-      --warn: #f5c451;
-      --radius: 12px;
-      --header-h: 60px;
+      /* City4All brand: change these values to match the official palette. */
+      --blue: #1d4ed8;          /* "City", primary actions, links, active states */
+      --blue-hover: #1e40af;
+      --blue-soft: #eaf0ff;
+      --green: #15803d;         /* "4All", accessible-status accents */
+      --green-soft: #e7f6ec;
+
+      --bg: #ffffff;
+      --surface: #f4f6f9;       /* very light gray secondary surfaces */
+      --border: #d9dee6;
+      --text: #14213d;          /* dark navy */
+      --muted: #536077;
+      --warn: #8a5300;
+      --warn-soft: #fff4de;
+
+      --radius: 14px;
+      --shadow: 0 8px 28px rgba(20, 33, 61, 0.14);
+      --header-h: 64px;
     }
 
     * { box-sizing: border-box; }
-
-    html { color-scheme: dark; }
+    html { color-scheme: light; }
 
     body {
       margin: 0;
-      font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 15px;
       line-height: 1.5;
       background: var(--bg);
@@ -45,8 +50,20 @@
     button, input { font: inherit; color: inherit; }
 
     :focus-visible {
-      outline: 3px solid var(--accent);
+      outline: 3px solid var(--blue);
       outline-offset: 2px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .skip-link {
@@ -54,13 +71,19 @@
       left: 12px;
       top: -60px;
       padding: 10px 14px;
-      background: var(--accent);
-      color: var(--accent-ink);
+      background: var(--blue);
+      color: #fff;
       border-radius: 8px;
-      font-weight: 700;
+      font-weight: 600;
       z-index: 100;
     }
     .skip-link:focus { top: 10px; }
+
+    /* ---------- Brand wordmark ---------- */
+    .wordmark { font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
+    .wordmark .city { color: var(--blue); }
+    .wordmark .all { color: var(--green); }
+    .wordmark .xr { color: var(--text); font-weight: 600; margin-left: 6px; }
 
     /* ---------- Header ---------- */
     header {
@@ -70,20 +93,10 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
     }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.1px;
-    }
-    .brand svg { flex: none; }
-    .brand .xr { color: var(--accent); }
+    header .wordmark { font-size: 24px; }
 
     .status {
       display: flex;
@@ -95,23 +108,23 @@
     }
     .status::before {
       content: "";
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: var(--muted);
+      background: #98a2b3;
       flex: none;
     }
-    .status.ready::before { background: var(--accent); }
-    .status.problem::before { background: var(--warn); }
+    .status.ready::before { background: var(--green); }
+    .status.problem::before { background: var(--warn); border-radius: 2px; }   /* shape differs, not only color */
 
     /* ---------- Layout ---------- */
     main {
       display: grid;
-      grid-template-columns: 350px minmax(0, 1fr);
+      grid-template-columns: 360px minmax(0, 1fr);
       grid-template-areas: "list stage";
       height: calc(100vh - var(--header-h));
       height: calc(100dvh - var(--header-h));
-      min-height: 520px;
+      min-height: 540px;
     }
 
     .list-panel {
@@ -119,20 +132,20 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-      background: var(--panel);
-      border-right: 1px solid var(--line);
+      background: var(--bg);
+      border-right: 1px solid var(--border);
     }
 
     .list-head { padding: 20px 18px 12px; }
 
-    h1, h2 { margin: 0; line-height: 1.25; }
+    h1, h2, h3 { margin: 0; line-height: 1.25; }
     h1 { font-size: 18px; }
     .lead { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 
     .search-wrap { position: relative; margin-top: 14px; }
     .search-wrap svg {
       position: absolute;
-      left: 12px;
+      left: 13px;
       top: 50%;
       transform: translateY(-50%);
       color: var(--muted);
@@ -141,19 +154,23 @@
 
     #search {
       width: 100%;
-      padding: 12px 12px 12px 40px;
+      min-height: 44px;
+      padding: 10px 12px 10px 42px;
       border-radius: 10px;
-      border: 1px solid var(--line);
+      border: 1px solid #aeb7c5;
       background: var(--bg);
     }
-    #search::placeholder { color: #8195b1; }
-    #search:hover { border-color: #3a5a88; }
+    #search::placeholder { color: #6b778c; }
+    #search:hover { border-color: var(--blue); }
 
-    .count {
-      margin: 12px 0 0;
-      font-size: 13px;
-      color: var(--muted);
+    .list-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 12px;
     }
+    .count { margin: 0; font-size: 13px; color: var(--muted); }
 
     #places {
       list-style: none;
@@ -168,22 +185,24 @@
 
     .place {
       width: 100%;
+      min-height: 44px;
       display: block;
       text-align: left;
-      padding: 11px 12px 11px 14px;
+      padding: 10px 12px 10px 14px;
       border-radius: 10px;
       border: 1px solid transparent;
       border-left: 4px solid transparent;
       background: transparent;
       cursor: pointer;
+      transition: background-color 0.15s ease;
     }
-    .place:hover { background: var(--raised); }
+    .place:hover { background: var(--surface); }
     .place[aria-current="true"] {
-      background: var(--raised);
-      border-color: var(--line);
-      border-left-color: var(--accent);
+      background: var(--blue-soft);
+      border-color: #c5d3f8;
+      border-left-color: var(--blue);
     }
-    .place .p-name { display: block; font-weight: 700; overflow-wrap: anywhere; }
+    .place .p-name { display: block; font-weight: 600; overflow-wrap: anywhere; }
     .place .p-sub {
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -194,11 +213,52 @@
       color: var(--muted);
     }
 
-    .list-note {
-      padding: 14px 8px;
-      color: var(--muted);
-      font-size: 14px;
+    .list-note { padding: 14px 8px; color: var(--muted); font-size: 14px; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      min-height: 44px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
+    .btn:hover { border-color: var(--blue); }
+    .btn.primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .btn.primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+    .btn.small { min-height: 40px; padding: 6px 12px; font-size: 14px; }
+    .btn.link {
+      border: none;
+      background: none;
+      padding: 6px 4px;
+      min-height: 40px;
+      color: var(--blue);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .icon-btn {
+      flex: none;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+    }
+    .icon-btn:hover { border-color: var(--blue); }
+    .icon-btn svg { transition: transform 0.15s ease; }
+    .card.collapsed .icon-btn svg { transform: rotate(180deg); }
 
     /* ---------- Stage (street imagery) ---------- */
     .stage {
@@ -207,7 +267,7 @@
       display: grid;
       min-width: 0;
       min-height: 0;
-      background: #060e1b;
+      background: var(--surface);
       overflow: hidden;
     }
 
@@ -222,7 +282,7 @@
       grid-area: 1 / 1;
       z-index: 2;
       place-self: center;
-      max-width: 340px;
+      max-width: 360px;
       padding: 24px;
       text-align: center;
       pointer-events: none;
@@ -242,8 +302,9 @@
       align-items: center;
       gap: 10px;
       border-radius: 999px;
-      background: rgba(10, 22, 40, 0.92);
-      border: 1px solid var(--line);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
       font-size: 14px;
     }
     .loading-chip[hidden] { display: none; }
@@ -251,29 +312,47 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      border: 2px solid var(--line);
-      border-top-color: var(--accent);
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ---------- Info card ---------- */
+    .credit {
+      grid-area: 1 / 1;
+      z-index: 4;
+      place-self: end end;
+      margin: 0 12px 10px 0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .credit a { color: var(--blue); }
+
+    /* ---------- Cards over the map ---------- */
+    .card, .near {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* Place details card: bottom-left */
     .card {
       grid-area: 1 / 1;
       z-index: 5;
       align-self: end;
       justify-self: start;
-      width: min(440px, calc(100% - 32px));
+      width: min(430px, calc(100% - 32px));
       max-height: calc(100% - 32px);
       margin: 16px;
       display: flex;
       flex-direction: column;
-      background: rgba(15, 31, 56, 0.96);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
       overflow: hidden;
     }
+    .card[hidden] { display: none; }
 
     .card-head {
       display: flex;
@@ -284,115 +363,178 @@
     }
     .card-head h2 { font-size: 20px; overflow-wrap: anywhere; }
     .card-address { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
-
-    .icon-btn {
-      flex: none;
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: var(--raised);
-      cursor: pointer;
-    }
-    .icon-btn:hover { border-color: var(--accent); }
-    .icon-btn svg { transition: transform 0.15s ease; }
-    .card.collapsed .icon-btn svg { transform: rotate(180deg); }
-
-    .card-body {
-      padding: 12px 16px 16px;
-      overflow-y: auto;
-    }
+    .card-body { padding: 12px 16px 16px; overflow-y: auto; }
     .card.collapsed .card-body { display: none; }
     .card.collapsed .card-head { padding-bottom: 14px; }
-
     .card-desc { margin: 0 0 12px; max-width: 62ch; }
 
     .photo-box {
       margin: 0 0 14px;
       padding: 10px 12px;
       border-radius: 10px;
-      background: var(--bg);
-      border: 1px solid var(--line);
+      background: var(--surface);
+      border: 1px solid var(--border);
       font-size: 14px;
     }
     .photo-box p { margin: 0; }
-    .photo-box .ok { color: var(--accent); font-weight: 700; }
-    .photo-box .warn { color: var(--warn); font-weight: 700; }
+    .photo-box .ok { color: var(--green); font-weight: 600; }
+    .photo-box .warn { color: var(--warn); font-weight: 600; }
     .photo-box .sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
 
     .facts { margin: 0; display: grid; gap: 10px; }
     .fact dt { font-size: 13px; color: var(--muted); }
     .fact dd { margin: 1px 0 0; overflow-wrap: anywhere; }
-
     .card-actions { margin-top: 14px; }
-    .btn {
-      padding: 9px 14px;
-      border-radius: 9px;
-      border: 1px solid var(--line);
-      background: var(--raised);
-      cursor: pointer;
-      font-weight: 700;
-    }
-    .btn:hover { border-color: var(--accent); }
 
-    .credit {
+    /* Nearest City4All point: top-right, compact */
+    .near {
       grid-area: 1 / 1;
-      z-index: 4;
-      place-self: end end;
-      margin: 0 12px 10px 0;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: rgba(10, 22, 40, 0.8);
-      font-size: 12px;
-      color: var(--muted);
+      z-index: 7;
+      align-self: start;
+      justify-self: end;
+      width: min(340px, calc(100% - 32px));
+      margin: 16px;
+      padding: 14px 14px 12px;
+      border-top: 4px solid var(--green);
     }
-    .credit a { color: var(--accent); }
+    .near[hidden], .near-pill[hidden] { display: none; }
 
-    /* ---------- Mobile ---------- */
+    .near-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .near-title { display: flex; flex-direction: column; min-width: 0; }
+    .near-brand { font-size: 13px; line-height: 1.2; }
+    .near-title h2 { font-size: 16px; }
+
+    .near-name { margin: 10px 0 0; font-size: 17px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+    .near-dist {
+      margin: 6px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .near-dist strong { font-size: 20px; color: var(--blue); }
+    .near-dist span { font-size: 13px; color: var(--muted); }
+
+    .near-cat {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: #0f5b2c;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+    .near-cat.none { background: var(--surface); color: var(--muted); }
+
+    .near-note { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+    .near-from { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+
+    .near-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .near-actions .btn { flex: 1 1 auto; }
+
+    .near-more {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .near-more[hidden] { display: none; }
+
+    .alts { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .alts h3 { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .alts ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+    .alt-btn {
+      width: 100%;
+      min-height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .alt-btn:hover { border-color: var(--blue); background: var(--blue-soft); }
+    .alt-btn .a-name { overflow-wrap: anywhere; }
+    .alt-btn .a-dist { color: var(--muted); white-space: nowrap; font-size: 13px; }
+
+    .near-pill {
+      grid-area: 1 / 1;
+      z-index: 7;
+      align-self: start;
+      justify-self: end;
+      margin: 16px;
+      min-height: 44px;
+      padding: 8px 14px 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--green);
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .near-pill:hover { border-color: var(--blue); border-left-color: var(--green); }
+
+    /* ---------- Tablet / mobile ---------- */
+    @media (max-width: 1100px) and (min-width: 861px) {
+      main { grid-template-columns: 300px minmax(0, 1fr); }
+    }
+
     @media (max-width: 860px) {
       header { padding: 0 14px; }
-      .status { font-size: 12px; max-width: 55%; }
+      header .wordmark { font-size: 21px; }
+      .status { font-size: 12px; max-width: 52%; }
 
-      main {
-        display: block;
-        height: auto;
-        min-height: 0;
-      }
+      main { display: block; height: auto; min-height: 0; }
 
       .stage {
-        display: grid;
-        grid-template-rows: 46vh auto;
+        grid-template-rows: 46vh auto auto;
         background: var(--bg);
       }
       #pano { grid-area: 1 / 1; min-height: 260px; }
-      .stage-empty, .loading-chip { grid-row: 1; }
-      .credit { grid-row: 1; }
+      .stage-empty, .loading-chip, .credit { grid-row: 1; }
+
+      .near, .near-pill {
+        grid-area: 2 / 1;
+        justify-self: stretch;
+        align-self: stretch;
+        width: auto;
+        margin: 10px 12px 0;
+        box-shadow: none;
+      }
+      .near-pill { justify-content: center; }
 
       .card {
-        grid-area: 2 / 1;
+        grid-area: 3 / 1;
         align-self: stretch;
         justify-self: stretch;
         width: auto;
         max-height: none;
-        margin: 0;
-        border-radius: 0;
-        border-width: 1px 0 0;
+        margin: 10px 12px 12px;
         box-shadow: none;
-        background: var(--panel);
       }
 
-      .list-panel {
-        border-right: none;
-        border-top: 1px solid var(--line);
-      }
+      .list-panel { border-right: none; border-top: 1px solid var(--border); }
       #places { overflow: visible; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .spinner { animation-duration: 2.4s; }
-      .icon-btn svg { transition: none; }
+      .icon-btn svg, .btn, .place { transition: none; }
     }
   </style>
 </head>
@@ -401,12 +543,8 @@
   <a class="skip-link" href="#places">Μετάβαση στη λίστα μερών</a>
 
   <header>
-    <div class="brand">
-      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-        <circle cx="14" cy="14" r="11" fill="none" stroke="#35e0c2" stroke-width="3"/>
-        <circle cx="14" cy="14" r="4" fill="#35e0c2"/>
-      </svg>
-      <span>City4All <span class="xr">XR</span></span>
+    <div class="wordmark" aria-label="City4All XR">
+      <span class="city">City</span><span class="all">4All</span><span class="xr">XR</span>
     </div>
     <div class="status" id="status" role="status" aria-live="polite">Φόρτωση Mapillary…</div>
   </header>
@@ -425,7 +563,11 @@
                  placeholder="Αναζήτηση με όνομα ή στοιχείο"
                  aria-label="Αναζήτηση μέρους" />
         </div>
-        <p class="count" id="count" aria-live="polite"></p>
+
+        <div class="list-tools">
+          <p class="count" id="count" aria-live="polite"></p>
+          <button class="btn small" id="geoBtn" type="button">Χρήση της τοποθεσίας μου</button>
+        </div>
       </div>
 
       <ul id="places">
@@ -446,6 +588,31 @@
         <span>Αναζήτηση φωτογραφίας δρόμου…</span>
       </div>
 
+      <!-- Nearest City4All point -->
+      <section class="near" id="near" aria-labelledby="nearTitle">
+        <div class="near-head">
+          <div class="near-title">
+            <span class="near-brand wordmark" aria-hidden="true"><span class="city">City</span><span class="all">4All</span></span>
+            <h2 id="nearTitle">Κοντινότερο σημείο</h2>
+          </div>
+          <button class="icon-btn" id="nearClose" type="button"
+                  aria-label="Ελαχιστοποίηση κάρτας κοντινότερου σημείου" title="Ελαχιστοποίηση">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+        </div>
+        <div id="nearBody"></div>
+      </section>
+
+      <button class="near-pill" id="nearPill" type="button" hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>
+        </svg>
+        <span>Κοντινότερο σημείο</span>
+      </button>
+
+      <!-- Place details -->
       <article class="card" id="card" aria-labelledby="detailTitle" hidden>
         <div class="card-head">
           <div>
@@ -463,11 +630,8 @@
 
         <div class="card-body" id="cardBody">
           <p class="card-desc" id="detailText" hidden></p>
-
           <div class="photo-box" id="photoBox" role="status" aria-live="polite"></div>
-
           <dl class="facts" id="facts"></dl>
-
           <div class="card-actions">
             <button class="btn" id="backBtn" type="button">Πίσω στη λίστα</button>
           </div>
@@ -479,6 +643,9 @@
       </p>
     </section>
   </main>
+
+  <!-- Announces changes of the nearest point to screen readers -->
+  <p class="sr-only" id="nearAnnounce" role="status" aria-live="polite"></p>
 
   <script src="config.js"></script>
   <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
@@ -495,11 +662,18 @@
 
     let viewer = null;
     let currentSearch = 0;      // guards against out-of-order Mapillary responses
-    let items = [];             // prepared places: { feature, id, name, sub, ... }
+    let items = [];             // prepared places
     let selectedId = null;
     let fieldInfo = {};         // lower-case field name -> { name, alias, type, domain }
-    let roles = { name: null, desc: null, address: null };
-    let lastPhoto = null;       // { lat, lng, capturedAt, distance } of the photo being shown
+    let roles = { name: null, desc: null, address: null, category: null };
+    let lastPhoto = null;       // photo currently shown: { lat, lng, capturedAt, distance }
+    let expectedImageId = null; // image the app itself moved to (not a user navigation)
+
+    // Position the user is exploring from, and what the nearest-point card shows.
+    let refPos = null;          // { lat, lng, source: "place" | "photo" | "device" }
+    let near = { candidates: [], index: 0, dismissed: false, shownId: null, detailsOpen: false };
+    let nearTimer = null;
+    let lastNearRef = null;
 
     /* ---------- Small helpers ---------- */
 
@@ -520,14 +694,19 @@
       return 2 * R * Math.asin(Math.sqrt(h));
     }
 
+    function formatDistance(m) {
+      if (m < 1000) return `${Math.max(1, Math.round(m / 5) * 5)} μ.`;
+      return `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",")} χλμ.`;
+    }
+
     /* ---------- Reading names and labels from the ArcGIS layer ---------- */
 
-    // Fields that are bookkeeping, not information for visitors.
     const SYSTEM_FIELD = /^(objectid|fid|globalid|parentglobalid|creationdate|creator|editdate|editor|shape.*|x|y|esri_oid)$/i;
     const NOT_A_NAME = /creator|editor|email|e-mail|phone|τηλ|mobile|url|link|photo|image|φωτο/i;
     const NAME_HINT = /(^|[^a-z])(name|title)([^a-z]|$)|όνομα|ονομασ|επωνυμ|τίτλ|κατάστημα|επιχείρηση|χώρου|μέρους|business|venue|shop|place/i;
     const ADDRESS_HINT = /address|διεύθυνση|οδός|οδου|street|τοποθεσία|location/i;
     const DESC_HINT = /description|comment|note|περιγραφ|σχόλι|παρατηρ|details|λεπτομέρ/i;
+    const CATEGORY_HINT = /categor|κατηγορ|type|τύπος|τυπος|προσβασ|access|rating|βαθμ|ράμπ|ramp|wc|τουαλέτα/i;
 
     const isText = f => f.type === "esriFieldTypeString";
 
@@ -552,7 +731,6 @@
           name: f.name, alias: f.alias || f.name, type: f.type, domain: f.domain || null
         }));
       } else {
-        // Metadata unavailable: fall back to the keys present in the data.
         const keys = new Set();
         sampleFeatures.slice(0, 50).forEach(ft => Object.keys(ft.attributes || {}).forEach(k => keys.add(k)));
         fields = [...keys].map(k => ({ name: k, alias: k, type: "esriFieldTypeString", domain: null }));
@@ -565,12 +743,19 @@
       roles = {
         name: pickField(usable, NAME_HINT, NOT_A_NAME),
         address: pickField(usable, ADDRESS_HINT, NOT_A_NAME),
-        desc: pickField(usable, DESC_HINT, NOT_A_NAME)
+        desc: pickField(usable, DESC_HINT, NOT_A_NAME),
+        category: null
       };
+      // Category / accessibility: prefer a field with a coded-value list (a fixed set of answers).
+      roles.category =
+        usable.find(f => f.domain && f.domain.type === "codedValue" &&
+                         (CATEGORY_HINT.test(f.name) || CATEGORY_HINT.test(f.alias))) ||
+        pickField(usable, CATEGORY_HINT, NOT_A_NAME) ||
+        usable.find(f => f.domain && f.domain.type === "codedValue") || null;
 
-      // Optional manual override from config.js: CITY4ALL_FIELDS = { name: "...", ... }
+      // Optional manual override from config.js: CITY4ALL_FIELDS = { name, address, desc, category }
       if (typeof CITY4ALL_FIELDS === "object" && CITY4ALL_FIELDS) {
-        ["name", "address", "desc"].forEach(role => {
+        ["name", "address", "desc", "category"].forEach(role => {
           const wanted = String(CITY4ALL_FIELDS[role] || "").trim().toLowerCase();
           if (wanted && fieldInfo[wanted]) roles[role] = fieldInfo[wanted];
         });
@@ -580,11 +765,11 @@
         name: roles.name && roles.name.name,
         address: roles.address && roles.address.name,
         desc: roles.desc && roles.desc.name,
+        category: roles.category && roles.category.name,
         allFields: fields.map(f => `${f.name} (${f.alias})`)
       });
     }
 
-    // Turns a raw attribute into display text: coded domains, dates, trimming.
     function displayValue(key, raw) {
       if (raw === null || raw === undefined) return "";
       const f = fieldInfo[key.toLowerCase()];
@@ -617,13 +802,14 @@
     function buildItem(feature) {
       const a = feature.attributes || {};
       const id = a.OBJECTID ?? a.objectid ?? a.FID ?? `${feature.geometry.x},${feature.geometry.y}`;
+      const lat = Number(feature.geometry.y);
+      const lng = Number(feature.geometry.x);
 
       let name = attrText(feature, roles.name);
       const address = attrText(feature, roles.address);
       const desc = attrText(feature, roles.desc);
+      const category = attrText(feature, roles.category);
 
-      // No usable name field value: use another name-like text field, then the address,
-      // then the first short piece of text. Never a bare number.
       if (!name) {
         for (const key of Object.keys(a)) {
           const f = fieldInfo[key.toLowerCase()];
@@ -650,7 +836,7 @@
         .join(" ")
         .toLowerCase();
 
-      return { feature, id, name, address, desc, sub: address || desc, searchText };
+      return { feature, id, lat, lng, name, address, desc, category, sub: address || desc, searchText };
     }
 
     /* ---------- List ---------- */
@@ -711,13 +897,21 @@
     function selectPlace(it) {
       selectedId = it.id;
       lastPhoto = null;
+      near.detailsOpen = false;
       renderPlaces();
       renderCard(it);
+
+      // The exploration position is now this place; recompute immediately (no debounce).
+      setRefPos({ lat: it.lat, lng: it.lng, source: "place" }, true);
 
       if (isMobile()) {
         $("stage").scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
       }
       openImageryNear(it);
+    }
+
+    function currentItem() {
+      return items.find(x => String(x.id) === String(selectedId)) || null;
     }
 
     function renderCard(it) {
@@ -735,25 +929,28 @@
 
       const facts = $("facts");
       facts.innerHTML = "";
-
-      const used = new Set(
-        [roles.name, roles.address, roles.desc].filter(Boolean).map(r => r.name.toLowerCase())
-      );
-
-      Object.keys(f.attributes || {}).forEach(key => {
-        if (SYSTEM_FIELD.test(key) || used.has(key.toLowerCase())) return;
-        const value = displayValue(key, f.attributes[key]);
-        if (!value) return;
-        addFact(fieldLabel(key), value);
-      });
-
-      addFact("Συντεταγμένες μέρους",
-        `${Number(f.geometry.y).toFixed(5)}, ${Number(f.geometry.x).toFixed(5)}`);
+      appendFacts(facts, it, true);
+      addFact(facts, "Συντεταγμένες μέρους", `${it.lat.toFixed(5)}, ${it.lng.toFixed(5)}`);
 
       renderPhotoBox("idle");
     }
 
-    function addFact(label, value) {
+    function appendFacts(dl, it, skipUsed, limit = Infinity) {
+      const used = new Set(
+        skipUsed ? [roles.name, roles.address, roles.desc].filter(Boolean).map(r => r.name.toLowerCase()) : []
+      );
+      let n = 0;
+      for (const key of Object.keys(it.feature.attributes || {})) {
+        if (n >= limit) break;
+        if (SYSTEM_FIELD.test(key) || used.has(key.toLowerCase())) continue;
+        const value = displayValue(key, it.feature.attributes[key]);
+        if (!value) continue;
+        addFact(dl, fieldLabel(key), value);
+        n++;
+      }
+    }
+
+    function addFact(dl, label, value) {
       const row = document.createElement("div");
       row.className = "fact";
       const dt = document.createElement("dt");
@@ -761,7 +958,7 @@
       const dd = document.createElement("dd");
       dd.textContent = value;
       row.append(dt, dd);
-      $("facts").appendChild(row);
+      dl.appendChild(row);
     }
 
     function renderPhotoBox(state, extra) {
@@ -775,19 +972,16 @@
         p.textContent = "Αναζήτηση φωτογραφίας δρόμου κοντά στο μέρος…";
       } else if (state === "found") {
         p.className = "ok";
-        p.textContent = `Φωτογραφία δρόμου σε απόσταση ~${Math.round(extra.distance)} μ. από το μέρος`;
+        p.textContent = `Φωτογραφία δρόμου σε απόσταση ~${formatDistance(extra.distance)} από το μέρος`;
         sub.textContent = photoDetails(extra) +
           " Η φωτογραφία είναι τραβηγμένη από τον δρόμο, όχι ακριβώς από το σημείο του μέρους.";
       } else if (state === "none") {
         p.className = "warn";
         p.textContent = "Δεν υπάρχει φωτογραφία δρόμου του Mapillary σε περίπου 150 μ. από το μέρος.";
         sub.textContent = "Τα στοιχεία προσβασιμότητας παραμένουν διαθέσιμα. Διάλεξε άλλο μέρος ή ανέβασε φωτογραφίες στο Mapillary.";
-      } else if (state === "no-viewer") {
+      } else if (state === "no-viewer" || state === "error") {
         p.className = "warn";
         p.textContent = extra || "Η εικόνα δρόμου δεν είναι διαθέσιμη αυτή τη στιγμή.";
-      } else if (state === "error") {
-        p.className = "warn";
-        p.textContent = extra;
       } else {
         p.textContent = "Επιλέχθηκε μέρος. Ετοιμάζω την εικόνα δρόμου…";
       }
@@ -807,6 +1001,252 @@
       $("stageEmptyText").textContent = text;
       $("stageEmpty").className = "stage-empty" + (warn ? " warn" : "");
       $("stageEmpty").hidden = false;
+    }
+
+    /* ---------- Nearest City4All point ---------- */
+
+    const SEARCH_RADII = [300, 1000, 3000, 10000, 50000, Infinity];   // metres, expanded until something is found
+    const MAX_CANDIDATES = 3;
+
+    // Returns up to `k` nearest places, never the one currently selected (unless it is the only one).
+    function findNearest(ref, k = MAX_CANDIDATES) {
+      const pool = items.filter(it => String(it.id) !== String(selectedId));
+      const source = pool.length ? pool : items;
+      if (!source.length) return [];
+
+      const cosLat = Math.cos(ref.lat * Math.PI / 180);
+
+      for (const radius of SEARCH_RADII) {
+        // Cheap bounding-box pre-filter before the exact haversine distance.
+        const dLat = radius / 111320;
+        const dLng = radius / (111320 * Math.max(cosLat, 0.01));
+        const hits = [];
+        for (const it of source) {
+          if (radius !== Infinity &&
+              (Math.abs(it.lat - ref.lat) > dLat || Math.abs(it.lng - ref.lng) > dLng)) continue;
+          const d = distanceMeters(ref.lat, ref.lng, it.lat, it.lng);
+          if (d <= radius) hits.push({ item: it, distance: d });
+        }
+        if (hits.length) {
+          hits.sort((a, b) => a.distance - b.distance);
+          return hits.slice(0, k);
+        }
+      }
+      return [];
+    }
+
+    function setRefPos(pos, immediate = false) {
+      refPos = pos;
+      if (immediate) {
+        clearTimeout(nearTimer);
+        updateNearest(true);
+      } else {
+        clearTimeout(nearTimer);
+        nearTimer = setTimeout(() => updateNearest(false), 250);
+      }
+    }
+
+    function updateNearest(force) {
+      if (!refPos || !items.length) { renderNear(); return; }
+
+      // Skip work when the position barely moved (viewer events can be frequent).
+      if (!force && lastNearRef &&
+          distanceMeters(lastNearRef.lat, lastNearRef.lng, refPos.lat, refPos.lng) < 5) return;
+      lastNearRef = { lat: refPos.lat, lng: refPos.lng };
+
+      near.candidates = findNearest(refPos);
+      near.index = 0;
+      near.detailsOpen = false;
+      renderNear();
+    }
+
+    function refSourceText() {
+      if (!refPos) return "";
+      if (refPos.source === "device") return "Από την τοποθεσία σου";
+      if (refPos.source === "photo") return "Από τη θέση που εξερευνάς στον δρόμο";
+      const it = currentItem();
+      return it ? `Από το μέρος «${it.name}»` : "Από το επιλεγμένο μέρος";
+    }
+
+    function makeButton(text, cls, handler) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn " + cls;
+      b.textContent = text;
+      b.addEventListener("click", handler);
+      return b;
+    }
+
+    function renderNear() {
+      const box = $("nearBody");
+      box.innerHTML = "";
+
+      $("near").hidden = near.dismissed;
+      $("nearPill").hidden = !near.dismissed;
+
+      const p = (cls, text) => {
+        const el = document.createElement("p");
+        el.className = cls;
+        el.textContent = text;
+        return el;
+      };
+
+      if (!items.length) {
+        box.appendChild(p("near-note", "Τα μέρη φορτώνουν… Όταν είναι έτοιμα θα δεις εδώ το κοντινότερο σημείο."));
+        return;
+      }
+
+      if (!refPos) {
+        box.appendChild(p("near-note", "Διάλεξε ένα μέρος από τη λίστα ή πάτησε «Χρήση της τοποθεσίας μου», για να δεις ποιο σημείο City4All βρίσκεται κοντά."));
+        return;
+      }
+
+      const cand = near.candidates[near.index];
+      if (!cand) {
+        box.appendChild(p("near-note", "Δεν βρέθηκε άλλο σημείο City4All με έγκυρες συντεταγμένες."));
+        return;
+      }
+
+      const it = cand.item;
+
+      const name = document.createElement("p");
+      name.className = "near-name";
+      name.textContent = it.name;
+      box.appendChild(name);
+
+      const dist = document.createElement("p");
+      dist.className = "near-dist";
+      const strong = document.createElement("strong");
+      strong.textContent = `~${formatDistance(cand.distance)}`;
+      const unit = document.createElement("span");
+      unit.textContent = "σε ευθεία γραμμή";
+      dist.append(strong, unit);
+      box.appendChild(dist);
+
+      const cat = document.createElement("p");
+      cat.className = "near-cat" + (it.category ? "" : " none");
+      cat.textContent = it.category
+        ? `Προσβασιμότητα: ${it.category}`
+        : "Δεν υπάρχουν διαθέσιμα στοιχεία προσβασιμότητας στα δεδομένα.";
+      box.appendChild(cat);
+
+      box.appendChild(p("near-from", refSourceText() + "."));
+      box.appendChild(p("near-note", "Η απόσταση είναι σε ευθεία γραμμή και όχι διαδρομή πεζών. Οι οδηγίες περπατήματος δεν είναι διαθέσιμες ακόμα."));
+
+      const actions = document.createElement("div");
+      actions.className = "near-actions";
+      actions.appendChild(makeButton("Εξερεύνηση σημείου", "primary", () => selectPlace(it)));
+
+      const detailsBtn = makeButton(near.detailsOpen ? "Απόκρυψη λεπτομερειών" : "Λεπτομέρειες", "", () => {
+        near.detailsOpen = !near.detailsOpen;
+        renderNear();
+        const d = $("nearMore");
+        if (d) d.scrollIntoView({ block: "nearest" });
+      });
+      detailsBtn.setAttribute("aria-expanded", String(near.detailsOpen));
+      detailsBtn.setAttribute("aria-controls", "nearMore");
+      actions.appendChild(detailsBtn);
+      box.appendChild(actions);
+
+      const more = document.createElement("div");
+      more.className = "near-more";
+      more.id = "nearMore";
+      more.hidden = !near.detailsOpen;
+      const dl = document.createElement("dl");
+      dl.className = "facts";
+      if (it.address) addFact(dl, "Διεύθυνση", it.address);
+      if (it.desc) addFact(dl, "Περιγραφή", it.desc);
+      appendFacts(dl, it, true, 8);
+      addFact(dl, "Συντεταγμένες", `${it.lat.toFixed(5)}, ${it.lng.toFixed(5)}`);
+      more.appendChild(dl);
+      box.appendChild(more);
+
+      // Alternatives when several points are at a similar distance
+      const others = near.candidates
+        .map((c, i) => ({ c, i }))
+        .filter(x => x.i !== near.index);
+      if (others.length) {
+        const alts = document.createElement("div");
+        alts.className = "alts";
+        const h = document.createElement("h3");
+        h.textContent = "Άλλα κοντινά σημεία";
+        const ul = document.createElement("ul");
+        others.forEach(({ c, i }) => {
+          const li = document.createElement("li");
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "alt-btn";
+          const n = document.createElement("span");
+          n.className = "a-name";
+          n.textContent = c.item.name;
+          const d = document.createElement("span");
+          d.className = "a-dist";
+          d.textContent = `~${formatDistance(c.distance)}`;
+          b.append(n, d);
+          b.addEventListener("click", () => {
+            near.index = i;
+            near.detailsOpen = false;
+            renderNear();
+            announceNear(true);
+          });
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+        alts.append(h, ul);
+        box.appendChild(alts);
+      }
+
+      announceNear(false);
+    }
+
+    // Tell screen-reader users when the recommended point changes.
+    function announceNear(force) {
+      const cand = near.candidates[near.index];
+      if (!cand) return;
+      if (!force && near.shownId === cand.item.id) return;
+      near.shownId = cand.item.id;
+      $("nearAnnounce").textContent =
+        `Κοντινότερο σημείο: ${cand.item.name}, περίπου ${formatDistance(cand.distance)} σε ευθεία γραμμή.`;
+    }
+
+    /* ---------- Device location (only after the user asks) ---------- */
+
+    function useDeviceLocation() {
+      if (!("geolocation" in navigator)) {
+        near.dismissed = false;
+        renderNearMessage("Ο browser δεν υποστηρίζει τοποθεσία. Διάλεξε ένα μέρος από τη λίστα.");
+        return;
+      }
+      const btn = $("geoBtn");
+      btn.disabled = true;
+      btn.textContent = "Εντοπισμός…";
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          btn.disabled = false;
+          btn.textContent = "Χρήση της τοποθεσίας μου";
+          near.dismissed = false;
+          setRefPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, source: "device" }, true);
+        },
+        err => {
+          btn.disabled = false;
+          btn.textContent = "Χρήση της τοποθεσίας μου";
+          near.dismissed = false;
+          renderNear();
+          const msg = err.code === 1
+            ? "Δεν δόθηκε άδεια τοποθεσίας. Διάλεξε ένα μέρος από τη λίστα για να ξεκινήσεις."
+            : "Δεν μπόρεσα να βρω την τοποθεσία σου. Διάλεξε ένα μέρος από τη λίστα για να ξεκινήσεις.";
+          renderNearMessage(msg);
+        },
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
+      );
+    }
+
+    function renderNearMessage(text) {
+      const el = document.createElement("p");
+      el.className = "near-note";
+      el.textContent = text;
+      $("nearBody").prepend(el);
     }
 
     /* ---------- Mapillary ---------- */
@@ -830,21 +1270,26 @@
         try {
           viewer = new mapillary.Viewer({ accessToken: token, container: "pano" });
 
-          // Keep the photo position in sync when the user moves to a neighbouring image.
+          // Fires when the viewer shows a new image. Moves the app made itself are ignored;
+          // moves the user makes (clicking a neighbouring position) become the new exploration position.
           viewer.on("image", event => {
             const img = event.image;
             if (!img || !img.lngLat) return;
-            const it = items.find(x => String(x.id) === String(selectedId));
+
+            if (String(img.id) === String(expectedImageId)) {
+              expectedImageId = null;
+              return;
+            }
+
+            const it = currentItem();
             lastPhoto = {
               lat: img.lngLat.lat,
               lng: img.lngLat.lng,
               capturedAt: img.capturedAt,
-              distance: it ? distanceMeters(Number(it.feature.geometry.y), Number(it.feature.geometry.x),
-                                            img.lngLat.lat, img.lngLat.lng) : 0
+              distance: it ? distanceMeters(it.lat, it.lng, img.lngLat.lat, img.lngLat.lng) : 0
             };
-            if (it && !$("loadingChip").hidden === false && $("photoBox").textContent) {
-              renderPhotoBox("found", lastPhoto);
-            }
+            if (it) renderPhotoBox("found", lastPhoto);
+            setRefPos({ lat: img.lngLat.lat, lng: img.lngLat.lng, source: "photo" }, false);
           });
 
           window.addEventListener("resize", () => viewer && viewer.resize());
@@ -857,11 +1302,12 @@
         }
       }
 
+      renderNear();
       loadPlaces();   // ArcGIS data loads regardless of imagery availability
     }
 
-    // Finds the nearest Mapillary image. The radius search is limited to 50 m by the API,
-    // so fall back to a small bounding box (the API requires it to be under 0.01° wide).
+    // Radius search is limited to 50 m by the API, so fall back to a small bounding box
+    // (the API requires it to be under 0.01° wide).
     async function findNearestImage(lat, lng) {
       const token = MAPILLARY_TOKEN.trim();
 
@@ -895,9 +1341,6 @@
     }
 
     async function openImageryNear(it) {
-      const lat = Number(it.feature.geometry.y);
-      const lng = Number(it.feature.geometry.x);
-
       if (!viewer) {
         renderPhotoBox("no-viewer", $("status").textContent.includes("token")
           ? "Λείπει το Mapillary token, οπότε δεν υπάρχει εικόνα δρόμου. Τα στοιχεία του μέρους φαίνονται κανονικά."
@@ -910,7 +1353,7 @@
       renderPhotoBox("loading");
 
       try {
-        const best = await findNearestImage(lat, lng);
+        const best = await findNearestImage(it.lat, it.lng);
         if (searchId !== currentSearch) return;   // another place was picked meanwhile
 
         if (!best) {
@@ -920,8 +1363,10 @@
           return;
         }
 
+        expectedImageId = best.img.id;
         await viewer.moveTo(best.img.id);
         if (searchId !== currentSearch) return;
+        expectedImageId = null;
 
         $("stageEmpty").hidden = true;
         lastPhoto = {
@@ -933,6 +1378,7 @@
         renderPhotoBox("found", lastPhoto);
       } catch (error) {
         if (searchId !== currentSearch) return;
+        expectedImageId = null;
         console.error(error);
         const msg = error.message === "TOKEN_REJECTED"
           ? "Το Mapillary απέρριψε το token (401/403). Έλεγξε ότι το client token στο config.js είναι σωστό."
@@ -985,20 +1431,22 @@
       try {
         const [features, meta] = await Promise.all([fetchAllFeatures(), fetchLayerMeta()]);
 
-        const withCoords = features.filter(f =>
-          f.geometry &&
-          Number.isFinite(Number(f.geometry.x)) &&
-          Number.isFinite(Number(f.geometry.y))
-        );
+        // Drop records without valid coordinates (also guards against 0,0 placeholders).
+        const withCoords = features.filter(f => {
+          if (!f.geometry) return false;
+          const x = Number(f.geometry.x), y = Number(f.geometry.y);
+          return Number.isFinite(x) && Number.isFinite(y) &&
+                 Math.abs(y) <= 90 && Math.abs(x) <= 180 && !(x === 0 && y === 0);
+        });
 
         resolveFields(meta, withCoords);
         items = withCoords.map(buildItem)
           .sort((a, b) => a.name.localeCompare(b.name, "el"));
 
         renderPlaces();
+        updateNearest(true);
 
-        const mapillaryReady = $("status").classList.contains("ready");
-        if (mapillaryReady) setStatus(`${items.length} μέρη φορτώθηκαν`, "ready");
+        if ($("status").classList.contains("ready")) setStatus(`${items.length} μέρη φορτώθηκαν`, "ready");
       } catch (error) {
         console.error(error);
         $("count").textContent = "";
@@ -1008,12 +1456,25 @@
         li.textContent = "Δεν φορτώθηκαν τα μέρη. Έλεγξε τη σύνδεσή σου και ότι το layer του ArcGIS είναι δημόσιο, και ανανέωσε τη σελίδα.";
         $("places").appendChild(li);
         setStatus("Αποτυχία φόρτωσης μερών", "problem");
+        renderNear();
       }
     }
 
-    /* ---------- Events ---------- */
+    /* ---------- Events (each registered once) ---------- */
 
     $("search").addEventListener("input", renderPlaces);
+    $("geoBtn").addEventListener("click", useDeviceLocation);
+
+    $("nearClose").addEventListener("click", () => {
+      near.dismissed = true;
+      renderNear();
+      $("nearPill").focus();
+    });
+    $("nearPill").addEventListener("click", () => {
+      near.dismissed = false;
+      renderNear();
+      $("nearClose").focus();
+    });
 
     $("collapseBtn").addEventListener("click", () => {
       const card = $("card");
